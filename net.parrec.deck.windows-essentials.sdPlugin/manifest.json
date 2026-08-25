@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/xaviparrec/windows-essentials-opendeck",
-  "Version": "0.15.1",
+  "Version": "0.16.0",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],

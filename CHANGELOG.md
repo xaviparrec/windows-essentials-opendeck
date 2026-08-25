@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0] - 2026-08-25
+
+### Changed
+
+- Refined the first icon group with a consistent white-and-accent visual system.
+- Added cyan audio accents, green media accents, and amber power accents while keeping icons readable at AKP05E size.
+
 ## [0.15.1] - 2026-08-25
 
 ### Added
