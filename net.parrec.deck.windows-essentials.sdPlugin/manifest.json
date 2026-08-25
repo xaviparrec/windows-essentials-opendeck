@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.11.2",
+  "Version": "0.12.0",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -70,6 +70,22 @@
     "Tooltip": "Rotate through all active Windows audio outputs.",
     "States": [{ "Image": "imgs/volume-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.audio-output-selector"
+  }, {
+    "Icon": "imgs/volume-icon",
+    "Name": "App Volume",
+    "Controllers": ["Encoder"],
+    "PropertyInspectorPath": "propertyInspector/app-volume.html",
+    "Encoder": {
+      "layout": "$B1",
+      "Icon": "imgs/volume-icon",
+      "TriggerDescription": {
+        "Rotate": "Adjust the selected application's volume",
+        "Push": "Mute or unmute the selected application"
+      }
+    },
+    "Tooltip": "Control volume for one active Windows application.",
+    "States": [{ "Image": "imgs/volume-icon" }],
+    "UUID": "net.parrec.deck.windows-essentials.app-volume"
   }, {
     "Icon": "imgs/media-toggle-icon",
     "Name": "Media: Play / Pause",

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { background: #202020; color: #ddd; font: 13px sans-serif; margin: 16px; }
+    label { display: block; margin: 8px 0 6px; color: #aaa; }
+    select { box-sizing: border-box; width: 100%; background: #303030; border: 1px solid #555; border-radius: 4px; color: #fff; padding: 7px; }
+    p { color: #aaa; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <label for="app">Active application</label>
+  <select id="app"><option value="">Select an application…</option></select>
+  <p>Only applications currently playing audio are listed. Rotate the encoder to adjust its volume; press to mute.</p>
+  <script>
+    let socket;
+    let context;
+    let settings = {};
+    let apps = [];
+    const appSelect = document.getElementById("app");
+
+    function populate(nextApps) {
+      apps = nextApps;
+      appSelect.innerHTML = '<option value="">Select an application…</option>';
+      for (const app of apps) {
+        const option = document.createElement("option");
+        option.value = app.pid;
+        option.textContent = app.name;
+        option.selected = Number(settings.pid) === app.pid;
+        appSelect.appendChild(option);
+      }
+    }
+
+    function save() {
+      const selected = apps.find((app) => app.pid === Number(appSelect.value));
+      socket.send(JSON.stringify({ event: "setSettings", context, payload: { pid: selected?.pid || 0, name: selected?.name || "" } }));
+    }
+
+    function connectElgatoStreamDeckSocket(inPort, inPropertyInspectorUUID, inRegisterEvent, inInfo, inActionInfo) {
+      const actionInfo = JSON.parse(inActionInfo);
+      context = actionInfo.context;
+      settings = actionInfo.payload.settings || {};
+      socket = new WebSocket("ws://localhost:" + inPort);
+      socket.onopen = () => {
+        socket.send(JSON.stringify({ event: inRegisterEvent, uuid: inPropertyInspectorUUID }));
+        socket.send(JSON.stringify({ event: "sendToPlugin", context, payload: { event: "getApps" } }));
+      };
+      socket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if (data.event === "sendToPropertyInspector" && data.payload?.event === "apps") populate(data.payload.apps);
+      };
+    }
+
+    appSelect.addEventListener("change", save);
+  </script>
+</body>
+</html>

@@ -10,6 +10,7 @@ const MASTER_VOLUME_ACTION_UUID = "net.parrec.deck.windows-essentials.master-vol
 const MICROPHONE_VOLUME_ACTION_UUID = "net.parrec.deck.windows-essentials.microphone-volume";
 const OUTPUT_SWITCH_ACTION_UUID = "net.parrec.deck.windows-essentials.audio-output";
 const OUTPUT_SELECTOR_ACTION_UUID = "net.parrec.deck.windows-essentials.audio-output-selector";
+const APP_VOLUME_ACTION_UUID = "net.parrec.deck.windows-essentials.app-volume";
 const PLAY_PAUSE_ACTION_UUID = "net.parrec.deck.windows-essentials.media-play-pause";
 const MEDIA_ACTIONS = new Map([
   ["net.parrec.deck.windows-essentials.media-previous", "previous"],
@@ -116,6 +117,10 @@ class WindowsEndpointVolume {
   getDefaultOutput() { return this.run("get-default-output"); }
   setOutput(id) { return this.run("set-output", id); }
   cycleOutput(ticks) { return this.run("cycle-output", String(ticks)); }
+  listApps() { return this.run("list-apps"); }
+  getAppVolume(pid) { return this.run("app-get", String(pid)); }
+  adjustAppVolume(pid, ticks) { return this.run("app-adjust", String(pid), String(ticks)); }
+  toggleAppMute(pid) { return this.run("app-toggle-mute", String(pid)); }
 
   lockWorkstation() {
     return new Promise((resolve, reject) => {
@@ -185,6 +190,7 @@ const displayFeedback = (context, feedback) => socket.send({
 const action = new MasterVolumeAction(audio, displayFeedback);
 const outputSettings = new Map();
 const outputSelectorSettings = new Map();
+const appVolumeSettings = new Map();
 const visibleOutputContexts = new Set();
 const microphoneAction = new MasterVolumeAction({
   get: () => audio.getMicrophone(),
@@ -205,6 +211,10 @@ function updateOutputSettings(context, settings) {
 
 function updateOutputSelectorSettings(context, settings) {
   outputSelectorSettings.set(context, { aliases: settings?.aliases && typeof settings.aliases === "object" ? settings.aliases : {} });
+}
+
+function updateAppVolumeSettings(context, settings) {
+  appVolumeSettings.set(context, { pid: Number(settings?.pid) || 0, name: settings?.name || "" });
 }
 
 async function updateOutputIcon(context) {
@@ -237,6 +247,28 @@ function displaySelectedOutput(context, output) {
   });
 }
 
+function displayAppVolume(context, state) {
+  const configuredName = appVolumeSettings.get(context)?.name;
+  socket.send({
+    event: "setFeedback",
+    context,
+    payload: {
+      title: state.muted ? "Muted" : (configuredName || state.name),
+      value: state.muted ? "Muted" : `${state.level}%`,
+      indicator: state.muted ? 0 : state.level
+    }
+  });
+}
+
+async function refreshAppVolume(context) {
+  const settings = appVolumeSettings.get(context);
+  if (!settings?.pid) {
+    socket.send({ event: "setFeedback", context, payload: { title: "App Volume", value: "Configure", indicator: 0 } });
+    return;
+  }
+  displayAppVolume(context, await audio.getAppVolume(settings.pid));
+}
+
 setInterval(() => {
   for (const context of visibleOutputContexts) {
     updateOutputIcon(context).catch((error) => console.error("Could not refresh audio-output icon:", error.message));
@@ -255,8 +287,17 @@ socket.connect(async (event) => {
       displaySelectedOutput(event.context, await audio.getDefaultOutput());
       return;
     }
+    if (event.action === APP_VOLUME_ACTION_UUID && event.event === "didReceiveSettings") {
+      updateAppVolumeSettings(event.context, event.payload?.settings);
+      await refreshAppVolume(event.context);
+      return;
+    }
     if ([OUTPUT_SWITCH_ACTION_UUID, OUTPUT_SELECTOR_ACTION_UUID].includes(event.action) && event.event === "sendToPlugin" && event.payload?.event === "getOutputs") {
       socket.send({ event: "sendToPropertyInspector", context: event.context, payload: { event: "outputs", outputs: await audio.listOutputs() } });
+      return;
+    }
+    if (event.action === APP_VOLUME_ACTION_UUID && event.event === "sendToPlugin" && event.payload?.event === "getApps") {
+      socket.send({ event: "sendToPropertyInspector", context: event.context, payload: { event: "apps", apps: await audio.listApps() } });
       return;
     }
     if (event.action === MASTER_VOLUME_ACTION_UUID) {
@@ -289,6 +330,21 @@ socket.connect(async (event) => {
       if (event.event === "dialRotate") {
         const ticks = Number(event.payload?.ticks) || 0;
         if (ticks !== 0) displaySelectedOutput(event.context, await audio.cycleOutput(ticks));
+      }
+      return;
+    }
+    if (event.action === APP_VOLUME_ACTION_UUID) {
+      if (event.event === "willAppear") {
+        updateAppVolumeSettings(event.context, event.payload?.settings);
+        await refreshAppVolume(event.context);
+      }
+      const settings = appVolumeSettings.get(event.context);
+      if (event.event === "dialRotate" && settings?.pid) {
+        const ticks = Number(event.payload?.ticks) || 0;
+        if (ticks !== 0) displayAppVolume(event.context, await audio.adjustAppVolume(settings.pid, ticks));
+      }
+      if ((event.event === "dialDown" || event.event === "keyDown") && settings?.pid) {
+        displayAppVolume(event.context, await audio.toggleAppMute(settings.pid));
       }
       return;
     }

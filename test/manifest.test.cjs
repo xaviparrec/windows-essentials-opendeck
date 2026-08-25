@@ -62,6 +62,15 @@ test("manifest exposes audio-output selector as an encoder action", () => {
   assert.equal(selector.States[0].Image, "imgs/volume-icon");
 });
 
+test("manifest exposes configurable app volume as an encoder action", () => {
+  const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
+  const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
+  const appVolume = manifest.Actions.find((action) => action.UUID.endsWith(".app-volume"));
+  assert.deepEqual(appVolume.Controllers, ["Encoder"]);
+  assert.equal(appVolume.PropertyInspectorPath, "propertyInspector/app-volume.html");
+  assert.ok(fs.existsSync(path.join(folder, appVolume.PropertyInspectorPath)));
+});
+
 test("manifest exposes a keypad action to lock the PC", () => {
   const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
