@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.14.0",
+  "Version": "0.15.0",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -117,7 +117,14 @@
     "Controllers": ["Keypad"],
     "PropertyInspectorPath": "propertyInspector/power-action.html",
     "Tooltip": "Lock, sleep, restart or shut down Windows.",
-    "States": [{ "Image": "imgs/lock-icon" }],
+    "States": [
+      { "Image": "imgs/lock-icon" },
+      { "Image": "imgs/sleep-icon" },
+      { "Image": "imgs/restart-icon" },
+      { "Image": "imgs/shutdown-icon" },
+      { "Image": "imgs/restart-confirm-icon" },
+      { "Image": "imgs/shutdown-confirm-icon" }
+    ],
     "UUID": "net.parrec.deck.windows-essentials.power-action"
   }]
 }

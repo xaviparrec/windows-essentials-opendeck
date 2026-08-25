@@ -77,5 +77,9 @@ test("manifest exposes the configurable power action", () => {
   const action = manifest.Actions.find((candidate) => candidate.UUID.endsWith(".power-action"));
   assert.deepEqual(action.Controllers, ["Keypad"]);
   assert.equal(action.PropertyInspectorPath, "propertyInspector/power-action.html");
+  assert.deepEqual(action.States.map((state) => state.Image), [
+    "imgs/lock-icon", "imgs/sleep-icon", "imgs/restart-icon", "imgs/shutdown-icon",
+    "imgs/restart-confirm-icon", "imgs/shutdown-confirm-icon"
+  ]);
   assert.ok(fs.existsSync(path.join(folder, `${action.States[0].Image}.svg`)));
 });

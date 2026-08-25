@@ -25,6 +25,12 @@ const SYSTEM_ACTIONS = new Map([
 const POWER_ACTION_UUID = "net.parrec.deck.windows-essentials.power-action";
 const shutdownConfirmations = new Map();
 const powerSettings = new Map();
+const POWER_STATES = {
+  "lock-pc": { normal: 0 },
+  "sleep-pc": { normal: 1 },
+  "restart-pc": { normal: 2, confirm: 4 },
+  "shutdown-pc": { normal: 3, confirm: 5 }
+};
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -200,6 +206,12 @@ function updatePowerSettings(context, settings) {
   powerSettings.set(context, settings?.command || "lock-pc");
 }
 
+function updatePowerDisplay(context, command, confirming = false) {
+  const states = POWER_STATES[command] || POWER_STATES["lock-pc"];
+  socket.send({ event: "setState", context, payload: { state: confirming ? states.confirm : states.normal } });
+  socket.send({ event: "setTitle", context, payload: { title: confirming ? "Press\nagain" : "" } });
+}
+
 async function runPowerAction(context) {
   const command = powerSettings.get(context) || "lock-pc";
   if (command === "lock-pc") {
@@ -210,12 +222,16 @@ async function runPowerAction(context) {
     const expires = shutdownConfirmations.get(context) || 0;
     if (expires < Date.now()) {
       shutdownConfirmations.set(context, Date.now() + 3000);
-      socket.send({ event: "setTitle", context, payload: { title: "Press again" } });
-      setTimeout(() => shutdownConfirmations.delete(context), 3000).unref();
+      updatePowerDisplay(context, command, true);
+      setTimeout(() => {
+        shutdownConfirmations.delete(context);
+        updatePowerDisplay(context, command);
+      }, 3000).unref();
       return;
     }
     shutdownConfirmations.delete(context);
   }
+  updatePowerDisplay(context, command);
   await audio.power(command);
 }
 
@@ -338,6 +354,7 @@ socket.connect(async (event) => {
     }
     if (event.action === POWER_ACTION_UUID && event.event === "didReceiveSettings") {
       updatePowerSettings(event.context, event.payload?.settings);
+      updatePowerDisplay(event.context, powerSettings.get(event.context));
       return;
     }
     if ([OUTPUT_SWITCH_ACTION_UUID, OUTPUT_SELECTOR_ACTION_UUID].includes(event.action) && event.event === "sendToPlugin" && event.payload?.event === "getOutputs") {
@@ -397,7 +414,10 @@ socket.connect(async (event) => {
       return;
     }
     if (event.action === POWER_ACTION_UUID) {
-      if (event.event === "willAppear") updatePowerSettings(event.context, event.payload?.settings);
+      if (event.event === "willAppear") {
+        updatePowerSettings(event.context, event.payload?.settings);
+        updatePowerDisplay(event.context, powerSettings.get(event.context));
+      }
       if (event.event === "keyDown") await runPowerAction(event.context);
       return;
     }
