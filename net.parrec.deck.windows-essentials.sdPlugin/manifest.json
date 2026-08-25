@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.5.0",
+  "Version": "0.6.0",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -27,5 +27,26 @@
     "Tooltip": "Gira per ajustar el volum; prem per silenciar.",
     "States": [{ "Image": "imgs/volume-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.master-volume"
+  }, {
+    "Icon": "imgs/play-pause-icon",
+    "Name": "Media: Play / Pause",
+    "Controllers": ["Keypad"],
+    "Tooltip": "Reprodueix o pausa el contingut multimèdia.",
+    "States": [{ "Image": "imgs/play-pause-icon" }],
+    "UUID": "net.parrec.deck.windows-essentials.media-play-pause"
+  }, {
+    "Icon": "imgs/previous-icon",
+    "Name": "Media: Previous",
+    "Controllers": ["Keypad"],
+    "Tooltip": "Pista o element anterior.",
+    "States": [{ "Image": "imgs/previous-icon" }],
+    "UUID": "net.parrec.deck.windows-essentials.media-previous"
+  }, {
+    "Icon": "imgs/next-icon",
+    "Name": "Media: Next",
+    "Controllers": ["Keypad"],
+    "Tooltip": "Pista o element següent.",
+    "States": [{ "Image": "imgs/next-icon" }],
+    "UUID": "net.parrec.deck.windows-essentials.media-next"
   }]
 }

@@ -21,7 +21,7 @@ npm test
 npm run package
 ```
 
-Install `release/Windows-Essentials-0.5.0.streamDeckPlugin` from OpenDeck's plugin installer. If OpenDeck lets you select an unpacked plugin folder, `net.parrec.deck.windows-essentials.sdPlugin` is also the development folder.
+Install `release/Windows-Essentials-0.6.0.streamDeckPlugin` from OpenDeck's plugin installer. If OpenDeck lets you select an unpacked plugin folder, `net.parrec.deck.windows-essentials.sdPlugin` is also the development folder.
 
 OpenDeck must be able to find Node.js 20 or later on your `PATH`; this computer currently has Node 24.
 

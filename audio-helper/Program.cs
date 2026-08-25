@@ -67,6 +67,9 @@ internal static class Program
                 var before = endpoint.Read();
                 SendMediaKey(key, Math.Max(1, int.TryParse(args.ElementAtOrDefault(2), out var count) ? count : 1));
                 return WaitForWindowsAudioUpdate(endpoint, before);
+            case "key" when TryGetMediaKey(args.ElementAtOrDefault(1), out var mediaKey):
+                SendMediaKey(mediaKey, 1);
+                break;
             case "toggle-mute":
                 endpoint.ToggleMute();
                 break;
@@ -94,7 +97,15 @@ internal static class Program
 
     private static bool TryGetMediaKey(string? name, out byte key)
     {
-        key = name switch { "up" => 0xAF, "down" => 0xAE, "mute" => 0xAD, _ => (byte)0 };
+        key = name switch {
+            "up" => 0xAF,
+            "down" => 0xAE,
+            "mute" => 0xAD,
+            "previous" => 0xB1,
+            "next" => 0xB0,
+            "play-pause" => 0xB3,
+            _ => (byte)0
+        };
         return key != 0;
     }
 

@@ -6,7 +6,12 @@ const path = require("node:path");
 const { spawn } = require("node:child_process");
 const { MasterVolumeAction } = require("./volume-action.cjs");
 
-const ACTION_UUID = "net.parrec.deck.windows-essentials.master-volume";
+const MASTER_VOLUME_ACTION_UUID = "net.parrec.deck.windows-essentials.master-volume";
+const MEDIA_ACTIONS = new Map([
+  ["net.parrec.deck.windows-essentials.media-play-pause", "play-pause"],
+  ["net.parrec.deck.windows-essentials.media-previous", "previous"],
+  ["net.parrec.deck.windows-essentials.media-next", "next"]
+]);
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -95,6 +100,7 @@ class WindowsEndpointVolume {
   // The helper reads the endpoint afterwards, so feedback stays exact.
   adjust(ticks) { return this.run("media", ticks > 0 ? "up" : "down", String(Math.abs(ticks))); }
   toggleMute() { return this.run("media", "mute", "1"); }
+  sendMediaKey(key) { return this.run("key", key); }
 
   run(command, ...values) {
     this.start();
@@ -148,18 +154,23 @@ const info = argument("-info");
 if (!port || !pluginUUID || !registerEvent) throw new Error("OpenDeck/Stream Deck launch arguments are missing.");
 
 const socket = new StreamDeckSocket(port, pluginUUID, registerEvent, info);
-const action = new MasterVolumeAction(new WindowsEndpointVolume(), (context, feedback) => socket.send({
+const audio = new WindowsEndpointVolume();
+const action = new MasterVolumeAction(audio, (context, feedback) => socket.send({
   // $B1 is the encoder layout: title, value and indicator are its named fields.
   event: "setFeedback", context, payload: feedback
 }));
 
 socket.connect(async (event) => {
-  if (event.action !== ACTION_UUID) return;
   try {
-    if (event.event === "willAppear") await action.appear(event.context);
-    if (event.event === "dialRotate") await action.rotate(event.context, event.payload?.ticks);
-    if (event.event === "dialDown" || event.event === "keyDown") await action.press(event.context);
+    if (event.action === MASTER_VOLUME_ACTION_UUID) {
+      if (event.event === "willAppear") await action.appear(event.context);
+      if (event.event === "dialRotate") await action.rotate(event.context, event.payload?.ticks);
+      if (event.event === "dialDown" || event.event === "keyDown") await action.press(event.context);
+      return;
+    }
+    const mediaKey = MEDIA_ACTIONS.get(event.action);
+    if (mediaKey && event.event === "keyDown") await audio.sendMediaKey(mediaKey);
   } catch (error) {
-    console.error("Could not update Windows master volume:", error.message);
+    console.error("Could not run Windows Essentials action:", error.message);
   }
 });
