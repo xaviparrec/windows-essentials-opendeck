@@ -2,11 +2,10 @@
   "SDKVersion": 2,
   "Author": "Xavi",
   "CodePath": "bin/plugin.cjs",
-  "Description": "Controls de volum, multimèdia i sortida d’àudio per a Windows.",
+  "Description": "Windows volume, media, application and power controls for OpenDeck.",
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
-  "URL": "https://github.com/",
-  "Version": "0.15.0",
+  "Version": "0.15.1",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -20,11 +19,11 @@
       "layout": "$B1",
       "Icon": "imgs/volume-icon",
       "TriggerDescription": {
-        "Rotate": "Puja o baixa el volum master",
-        "Push": "Activa o desactiva el silenci"
+        "Rotate": "Increase or decrease the master volume",
+        "Push": "Mute or unmute the master volume"
       }
     },
-    "Tooltip": "Gira per ajustar el volum; prem per silenciar.",
+    "Tooltip": "Rotate to adjust volume; press to mute or unmute.",
     "States": [{ "Image": "imgs/volume-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.master-volume"
   }, {
@@ -35,11 +34,11 @@
       "layout": "$B1",
       "Icon": "imgs/microphone-icon",
       "TriggerDescription": {
-        "Rotate": "Puja o baixa el volum del micròfon",
-        "Push": "Activa o desactiva el silenci del micròfon"
+        "Rotate": "Increase or decrease the microphone volume",
+        "Push": "Mute or unmute the microphone"
       }
     },
-    "Tooltip": "Gira per ajustar el micròfon; prem per silenciar-lo.",
+    "Tooltip": "Rotate to adjust the microphone; press to mute or unmute.",
     "States": [{ "Image": "imgs/microphone-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.microphone-volume"
   }, {
@@ -64,10 +63,10 @@
       "Icon": "imgs/volume-icon",
       "TriggerDescription": {
         "Rotate": "Select the next or previous active audio output",
-        "Push": "Show the current audio output"
+        "Push": "Make the displayed output the Windows default"
       }
     },
-    "Tooltip": "Rotate through all active Windows audio outputs.",
+    "Tooltip": "Rotate through active Windows audio outputs; press to select one.",
     "States": [{ "Image": "imgs/volume-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.audio-output-selector"
   }, {
@@ -91,7 +90,7 @@
     "Name": "Media: Play / Pause",
     "Controllers": ["Keypad"],
     "DisableAutomaticStates": true,
-    "Tooltip": "Reprodueix o pausa el contingut multimèdia.",
+    "Tooltip": "Play or pause the current media.",
     "States": [
       { "Image": "imgs/play-pause-icon" },
       { "Image": "imgs/pause-icon" }
@@ -101,14 +100,14 @@
     "Icon": "imgs/previous-icon",
     "Name": "Media: Previous",
     "Controllers": ["Keypad"],
-    "Tooltip": "Pista o element anterior.",
+    "Tooltip": "Skip to the previous track or item.",
     "States": [{ "Image": "imgs/previous-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.media-previous"
   }, {
     "Icon": "imgs/next-icon",
     "Name": "Media: Next",
     "Controllers": ["Keypad"],
-    "Tooltip": "Pista o element següent.",
+    "Tooltip": "Skip to the next track or item.",
     "States": [{ "Image": "imgs/next-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.media-next"
   }, {

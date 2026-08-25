@@ -1,8 +1,8 @@
 {
   "name": "windows-essentials-opendeck",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "private": true,
-  "description": "OpenDeck / Stream Deck compatible Windows master-volume encoder plugin.",
+  "description": "Windows volume, media, application and power controls for OpenDeck.",
   "scripts": {
     "test": "node --test test/*.test.cjs",
     "build:helper": "dotnet publish audio-helper\\AudioEndpointHelper.csproj -c Release -r win-x64 -o net.parrec.deck.windows-essentials.sdPlugin\\bin\\audio-helper",
