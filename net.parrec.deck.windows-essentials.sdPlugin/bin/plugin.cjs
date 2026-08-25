@@ -253,7 +253,7 @@ function displayAppVolume(context, state) {
     event: "setFeedback",
     context,
     payload: {
-      title: state.muted ? "Muted" : (configuredName || state.name),
+      title: configuredName || state.name,
       value: state.muted ? "Muted" : `${state.level}%`,
       indicator: state.muted ? 0 : state.level
     }

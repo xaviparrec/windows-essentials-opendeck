@@ -25,7 +25,7 @@ class MasterVolumeAction {
 
   feedback(state) {
     return {
-      title: state.muted ? this.mutedLabel : this.label,
+      title: this.label,
       value: state.muted ? "Muted" : `${state.level}%`,
       indicator: state.muted ? 0 : state.level
     };
