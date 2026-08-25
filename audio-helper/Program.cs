@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using Windows.Media.Control;
 
 namespace WindowsEssentials.AudioHelper;
 
@@ -54,7 +55,7 @@ internal static class Program
         }
     }
 
-    private static VolumeState Execute(EndpointVolume endpoint, string[] args)
+    private static object Execute(EndpointVolume endpoint, string[] args)
     {
         switch (args.FirstOrDefault())
         {
@@ -70,6 +71,12 @@ internal static class Program
             case "key" when TryGetMediaKey(args.ElementAtOrDefault(1), out var mediaKey):
                 SendMediaKey(mediaKey, 1);
                 break;
+            case "media-state":
+                return ReadMediaPlaybackState();
+            case "media-toggle":
+                var mediaBefore = ReadMediaPlaybackState();
+                SendMediaKey(0xB3, 1);
+                return WaitForMediaUpdate(mediaBefore);
             case "toggle-mute":
                 endpoint.ToggleMute();
                 break;
@@ -77,6 +84,27 @@ internal static class Program
                 throw new ArgumentException("Use: get | media <up|down|mute> [count] | adjust <signed ticks> | toggle-mute");
         }
         return endpoint.Read();
+    }
+
+    private static MediaPlaybackState ReadMediaPlaybackState()
+    {
+        var manager = GlobalSystemMediaTransportControlsSessionManager.RequestAsync().AsTask().GetAwaiter().GetResult();
+        var status = manager.GetCurrentSession()?.GetPlaybackInfo()?.PlaybackStatus;
+        return new MediaPlaybackState(status == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing, status?.ToString() ?? "NoSession");
+    }
+
+    private static MediaPlaybackState WaitForMediaUpdate(MediaPlaybackState before)
+    {
+        for (var attempt = 0; attempt < 30; attempt++)
+        {
+            Thread.Sleep(10);
+            var current = ReadMediaPlaybackState();
+            if (current.isPlaying != before.isPlaying)
+            {
+                return current;
+            }
+        }
+        return ReadMediaPlaybackState();
     }
 
     private static VolumeState WaitForWindowsAudioUpdate(EndpointVolume endpoint, VolumeState before)
@@ -163,6 +191,7 @@ internal static class Program
     }
 
     private sealed record VolumeState(int level, bool muted);
+    private sealed record MediaPlaybackState(bool isPlaying, string status);
 
     private enum EDataFlow { eRender, eCapture, eAll }
     private enum ERole { eConsole, eMultimedia, eCommunications }

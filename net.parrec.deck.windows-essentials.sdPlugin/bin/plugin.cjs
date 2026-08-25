@@ -7,8 +7,8 @@ const { spawn } = require("node:child_process");
 const { MasterVolumeAction } = require("./volume-action.cjs");
 
 const MASTER_VOLUME_ACTION_UUID = "net.parrec.deck.windows-essentials.master-volume";
+const PLAY_PAUSE_ACTION_UUID = "net.parrec.deck.windows-essentials.media-play-pause";
 const MEDIA_ACTIONS = new Map([
-  ["net.parrec.deck.windows-essentials.media-play-pause", "play-pause"],
   ["net.parrec.deck.windows-essentials.media-previous", "previous"],
   ["net.parrec.deck.windows-essentials.media-next", "next"]
 ]);
@@ -104,6 +104,8 @@ class WindowsEndpointVolume {
   adjust(ticks) { return this.run("media", ticks > 0 ? "up" : "down", String(Math.abs(ticks))); }
   toggleMute() { return this.run("media", "mute", "1"); }
   sendMediaKey(key) { return this.run("key", key); }
+  getPlaybackState() { return this.run("media-state"); }
+  togglePlayback() { return this.run("media-toggle"); }
 
   lockWorkstation() {
     return new Promise((resolve, reject) => {
@@ -171,12 +173,21 @@ const action = new MasterVolumeAction(audio, (context, feedback) => socket.send(
   event: "setFeedback", context, payload: feedback
 }));
 
+function updatePlayPauseIcon(context, playback) {
+  socket.send({ event: "setState", context, payload: { state: playback.isPlaying ? 1 : 0 } });
+}
+
 socket.connect(async (event) => {
   try {
     if (event.action === MASTER_VOLUME_ACTION_UUID) {
       if (event.event === "willAppear") await action.appear(event.context);
       if (event.event === "dialRotate") await action.rotate(event.context, event.payload?.ticks);
       if (event.event === "dialDown" || event.event === "keyDown") await action.press(event.context);
+      return;
+    }
+    if (event.action === PLAY_PAUSE_ACTION_UUID) {
+      if (event.event === "willAppear") updatePlayPauseIcon(event.context, await audio.getPlaybackState());
+      if (event.event === "keyDown") updatePlayPauseIcon(event.context, await audio.togglePlayback());
       return;
     }
     const mediaKey = MEDIA_ACTIONS.get(event.action);

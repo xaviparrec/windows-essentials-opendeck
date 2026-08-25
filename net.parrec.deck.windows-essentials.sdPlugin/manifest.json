@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.7.0",
+  "Version": "0.7.1",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -31,6 +31,7 @@
     "Icon": "imgs/media-toggle-icon",
     "Name": "Media: Play / Pause",
     "Controllers": ["Keypad"],
+    "DisableAutomaticStates": true,
     "Tooltip": "Reprodueix o pausa el contingut multimèdia.",
     "States": [
       { "Image": "imgs/play-pause-icon" },
