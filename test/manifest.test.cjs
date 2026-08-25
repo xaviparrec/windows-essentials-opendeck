@@ -57,6 +57,8 @@ test("manifest exposes audio-output selector as an encoder action", () => {
   const selector = manifest.Actions.find((action) => action.UUID.endsWith(".audio-output-selector"));
   assert.deepEqual(selector.Controllers, ["Encoder"]);
   assert.equal(selector.Encoder.layout, "$B1");
+  assert.equal(selector.PropertyInspectorPath, "propertyInspector/audio-output-selector.html");
+  assert.ok(fs.existsSync(path.join(folder, selector.PropertyInspectorPath)));
   assert.equal(selector.States[0].Image, "imgs/output-icon");
 });
 

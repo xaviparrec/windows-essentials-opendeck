@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { background: #202020; color: #ddd; font: 13px sans-serif; margin: 16px; }
+    h1 { font-size: 15px; margin: 0 0 8px; }
+    p { color: #aaa; line-height: 1.4; }
+    .output { border-top: 1px solid #444; padding: 12px 0; }
+    .device { color: #aaa; font-size: 12px; overflow-wrap: anywhere; }
+    label { display: block; margin: 8px 0 5px; }
+    input { box-sizing: border-box; width: 100%; background: #303030; border: 1px solid #555; border-radius: 4px; color: #fff; padding: 7px; }
+  </style>
+</head>
+<body>
+  <h1>Output names</h1>
+  <p>Optional short names shown on the encoder display. Empty fields use the Windows device name.</p>
+  <div id="outputs"></div>
+  <script>
+    let socket;
+    let context;
+    let aliases = {};
+
+    function save() {
+      socket.send(JSON.stringify({ event: "setSettings", context, payload: { aliases } }));
+    }
+
+    function populate(outputs) {
+      const container = document.getElementById("outputs");
+      container.replaceChildren();
+      for (const output of outputs) {
+        const entry = document.createElement("div");
+        entry.className = "output";
+        const name = document.createElement("div");
+        name.className = "device";
+        name.textContent = output.name;
+        const label = document.createElement("label");
+        label.textContent = "Display name";
+        const input = document.createElement("input");
+        input.value = aliases[output.id] || "";
+        input.placeholder = "e.g. Desk speakers";
+        input.addEventListener("input", () => { aliases[output.id] = input.value; save(); });
+        entry.append(name, label, input);
+        container.appendChild(entry);
+      }
+    }
+
+    function connectElgatoStreamDeckSocket(inPort, inPropertyInspectorUUID, inRegisterEvent, inInfo, inActionInfo) {
+      const actionInfo = JSON.parse(inActionInfo);
+      context = actionInfo.context;
+      aliases = actionInfo.payload.settings?.aliases || {};
+      socket = new WebSocket("ws://localhost:" + inPort);
+      socket.onopen = () => {
+        socket.send(JSON.stringify({ event: inRegisterEvent, uuid: inPropertyInspectorUUID }));
+        socket.send(JSON.stringify({ event: "sendToPlugin", context, payload: { event: "getOutputs" } }));
+      };
+      socket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if (data.event === "sendToPropertyInspector" && data.payload?.event === "outputs") populate(data.payload.outputs);
+      };
+    }
+  </script>
+</body>
+</html>

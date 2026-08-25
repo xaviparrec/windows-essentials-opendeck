@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.11.0",
+  "Version": "0.11.1",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -58,6 +58,7 @@
     "Icon": "imgs/output-icon",
     "Name": "Audio Output Selector",
     "Controllers": ["Encoder"],
+    "PropertyInspectorPath": "propertyInspector/audio-output-selector.html",
     "Encoder": {
       "layout": "$B1",
       "Icon": "imgs/output-icon",

@@ -184,6 +184,7 @@ const displayFeedback = (context, feedback) => socket.send({
 });
 const action = new MasterVolumeAction(audio, displayFeedback);
 const outputSettings = new Map();
+const outputSelectorSettings = new Map();
 const visibleOutputContexts = new Set();
 const microphoneAction = new MasterVolumeAction({
   get: () => audio.getMicrophone(),
@@ -200,6 +201,10 @@ function updateOutputSettings(context, settings) {
     outputA: settings?.outputA ?? "",
     outputB: settings?.outputB ?? ""
   });
+}
+
+function updateOutputSelectorSettings(context, settings) {
+  outputSelectorSettings.set(context, { aliases: settings?.aliases && typeof settings.aliases === "object" ? settings.aliases : {} });
 }
 
 async function updateOutputIcon(context) {
@@ -221,12 +226,13 @@ async function switchOutput(context) {
 }
 
 function displaySelectedOutput(context, output) {
+  const alias = outputSelectorSettings.get(context)?.aliases?.[output.id]?.trim();
   socket.send({
     event: "setFeedback",
     context,
     payload: {
       title: "Audio output",
-      value: output.name || "Unknown output",
+      value: alias || output.name || "Unknown output",
       indicator: 0
     }
   });
@@ -245,7 +251,12 @@ socket.connect(async (event) => {
       await updateOutputIcon(event.context);
       return;
     }
-    if (event.action === OUTPUT_SWITCH_ACTION_UUID && event.event === "sendToPlugin" && event.payload?.event === "getOutputs") {
+    if (event.action === OUTPUT_SELECTOR_ACTION_UUID && event.event === "didReceiveSettings") {
+      updateOutputSelectorSettings(event.context, event.payload?.settings);
+      displaySelectedOutput(event.context, await audio.getDefaultOutput());
+      return;
+    }
+    if ([OUTPUT_SWITCH_ACTION_UUID, OUTPUT_SELECTOR_ACTION_UUID].includes(event.action) && event.event === "sendToPlugin" && event.payload?.event === "getOutputs") {
       socket.send({ event: "sendToPropertyInspector", context: event.context, payload: { event: "outputs", outputs: await audio.listOutputs() } });
       return;
     }
@@ -272,6 +283,7 @@ socket.connect(async (event) => {
       return;
     }
     if (event.action === OUTPUT_SELECTOR_ACTION_UUID) {
+      if (event.event === "willAppear") updateOutputSelectorSettings(event.context, event.payload?.settings);
       if (event.event === "willAppear" || event.event === "dialDown" || event.event === "keyDown") {
         displaySelectedOutput(event.context, await audio.getDefaultOutput());
       }
