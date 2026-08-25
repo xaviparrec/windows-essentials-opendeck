@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.6.0",
+  "Version": "0.6.1",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -32,7 +32,10 @@
     "Name": "Media: Play / Pause",
     "Controllers": ["Keypad"],
     "Tooltip": "Reprodueix o pausa el contingut multimèdia.",
-    "States": [{ "Image": "imgs/play-pause-icon" }],
+    "States": [
+      { "Image": "imgs/play-pause-icon" },
+      { "Image": "imgs/pause-icon" }
+    ],
     "UUID": "net.parrec.deck.windows-essentials.media-play-pause"
   }, {
     "Icon": "imgs/previous-icon",

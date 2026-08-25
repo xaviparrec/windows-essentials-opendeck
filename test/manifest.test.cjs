@@ -25,4 +25,6 @@ test("manifest exposes the basic media controls as keypad actions", () => {
     "net.parrec.deck.windows-essentials.media-next"
   ]);
   assert.ok(mediaActions.every((action) => action.Controllers.includes("Keypad")));
+  const playPause = mediaActions.find((action) => action.UUID.endsWith("media-play-pause"));
+  assert.deepEqual(playPause.States.map((state) => state.Image), ["imgs/play-pause-icon", "imgs/pause-icon"]);
 });
