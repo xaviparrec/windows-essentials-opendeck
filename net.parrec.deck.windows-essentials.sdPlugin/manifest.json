@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.6.3",
+  "Version": "0.7.0",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -51,5 +51,12 @@
     "Tooltip": "Pista o element següent.",
     "States": [{ "Image": "imgs/next-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.media-next"
+  }, {
+    "Icon": "imgs/lock-icon",
+    "Name": "Lock PC",
+    "Controllers": ["Keypad"],
+    "Tooltip": "Bloqueja la sessió de Windows.",
+    "States": [{ "Image": "imgs/lock-icon" }],
+    "UUID": "net.parrec.deck.windows-essentials.lock-pc"
   }]
 }

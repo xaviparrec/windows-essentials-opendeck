@@ -12,6 +12,9 @@ const MEDIA_ACTIONS = new Map([
   ["net.parrec.deck.windows-essentials.media-previous", "previous"],
   ["net.parrec.deck.windows-essentials.media-next", "next"]
 ]);
+const SYSTEM_ACTIONS = new Map([
+  ["net.parrec.deck.windows-essentials.lock-pc", "lock-pc"]
+]);
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -102,6 +105,14 @@ class WindowsEndpointVolume {
   toggleMute() { return this.run("media", "mute", "1"); }
   sendMediaKey(key) { return this.run("key", key); }
 
+  lockWorkstation() {
+    return new Promise((resolve, reject) => {
+      const child = spawn("rundll32.exe", ["user32.dll,LockWorkStation"], { windowsHide: true, stdio: "ignore" });
+      child.on("error", reject);
+      child.on("close", (code) => code === 0 ? resolve() : reject(new Error(`Windows lock command exited with code ${code}.`)));
+    });
+  }
+
   run(command, ...values) {
     this.start();
     return new Promise((resolve, reject) => {
@@ -170,6 +181,9 @@ socket.connect(async (event) => {
     }
     const mediaKey = MEDIA_ACTIONS.get(event.action);
     if (mediaKey && event.event === "keyDown") await audio.sendMediaKey(mediaKey);
+
+    const systemAction = SYSTEM_ACTIONS.get(event.action);
+    if (systemAction === "lock-pc" && event.event === "keyDown") await audio.lockWorkstation();
   } catch (error) {
     console.error("Could not run Windows Essentials action:", error.message);
   }
