@@ -56,10 +56,10 @@ test("manifest exposes audio-output selector as an encoder action", () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
   const selector = manifest.Actions.find((action) => action.UUID.endsWith(".audio-output-selector"));
   assert.deepEqual(selector.Controllers, ["Encoder"]);
-  assert.equal(selector.Encoder.layout, "$B1");
+  assert.equal(selector.Encoder.layout, "$A1");
   assert.equal(selector.PropertyInspectorPath, "propertyInspector/audio-output-selector.html");
   assert.ok(fs.existsSync(path.join(folder, selector.PropertyInspectorPath)));
-  assert.equal(selector.States[0].Image, "imgs/output-icon");
+  assert.equal(selector.States[0].Image, "imgs/volume-icon");
 });
 
 test("manifest exposes a keypad action to lock the PC", () => {

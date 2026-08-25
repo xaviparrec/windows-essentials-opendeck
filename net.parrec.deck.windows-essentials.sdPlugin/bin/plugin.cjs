@@ -231,9 +231,8 @@ function displaySelectedOutput(context, output) {
     event: "setFeedback",
     context,
     payload: {
-      title: "Audio output",
+      title: "Output",
       value: alias || output.name || "Unknown output",
-      indicator: 0
     }
   });
 }

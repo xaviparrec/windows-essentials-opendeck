@@ -6,14 +6,14 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.11.1",
+  "Version": "0.11.2",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
   "Category": "Windows Essentials",
   "CategoryIcon": "imgs/plugin-icon",
   "Actions": [{
-    "Icon": "imgs/volume-icon",
+    "Icon": "imgs/output-icon",
     "Name": "Master Volume",
     "Controllers": ["Encoder"],
     "Encoder": {
@@ -43,7 +43,7 @@
     "States": [{ "Image": "imgs/microphone-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.microphone-volume"
   }, {
-    "Icon": "imgs/output-icon",
+    "Icon": "imgs/volume-icon",
     "Name": "Audio Output",
     "Controllers": ["Keypad"],
     "PropertyInspectorPath": "propertyInspector/audio-output.html",
@@ -55,20 +55,20 @@
     ],
     "UUID": "net.parrec.deck.windows-essentials.audio-output"
   }, {
-    "Icon": "imgs/output-icon",
+    "Icon": "imgs/volume-icon",
     "Name": "Audio Output Selector",
     "Controllers": ["Encoder"],
     "PropertyInspectorPath": "propertyInspector/audio-output-selector.html",
     "Encoder": {
-      "layout": "$B1",
-      "Icon": "imgs/output-icon",
+      "layout": "$A1",
+      "Icon": "imgs/volume-icon",
       "TriggerDescription": {
         "Rotate": "Select the next or previous active audio output",
         "Push": "Show the current audio output"
       }
     },
     "Tooltip": "Rotate through all active Windows audio outputs.",
-    "States": [{ "Image": "imgs/output-icon" }],
+    "States": [{ "Image": "imgs/volume-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.audio-output-selector"
   }, {
     "Icon": "imgs/media-toggle-icon",
