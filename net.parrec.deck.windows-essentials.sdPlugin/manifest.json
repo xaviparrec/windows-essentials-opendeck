@@ -1,6 +1,6 @@
 {
   "SDKVersion": 2,
-  "Author": "Xavi",
+  "Author": "Xavi Parrec",
   "CodePath": "bin/plugin.cjs",
   "Description": "Windows volume, media, application and power controls for OpenDeck.",
   "Name": "Windows Essentials",
