@@ -23,4 +23,4 @@ The plugin talks to OpenDeck through the Stream Deck WebSocket protocol. Do not 
 
 ## Pull requests
 
-Describe the Windows version, OpenDeck version, hardware tested, and any limitations. For actions that affect power or audio routing, include the safety behavior and the expected fallback when Windows reports no matching device or session.
+Describe the Windows version, OpenDeck version, hardware tested, and any limitations. The current baseline is the AJAZZ AKP05E; please identify any other device explicitly. For actions that affect power or audio routing, include the safety behavior and the expected fallback when Windows reports no matching device or session.
