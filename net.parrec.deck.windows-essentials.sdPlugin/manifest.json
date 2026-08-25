@@ -5,6 +5,7 @@
   "Description": "Windows volume, media, application and power controls for OpenDeck.",
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
+  "URL": "https://github.com/xaviparrec/windows-essentials-opendeck",
   "Version": "0.15.1",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },

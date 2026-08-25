@@ -34,6 +34,8 @@ The plugin has been tested in practice only with an **AJAZZ AKP05E** running thr
 
 For local development, OpenDeck can also load the unpacked folder `net.parrec.deck.windows-essentials.sdPlugin` if its plugin settings allow it.
 
+The source repository is available at [github.com/xaviparrec/windows-essentials-opendeck](https://github.com/xaviparrec/windows-essentials-opendeck).
+
 ## Build and test from source
 
 ```powershell
