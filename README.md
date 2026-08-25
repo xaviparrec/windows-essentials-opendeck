@@ -66,4 +66,4 @@ Version 0.15.1 is the first polished v0 release candidate for everyday use. The 
 
 ## License
 
-No open-source license has been selected yet. Choose and add one before publishing the repository publicly.
+This project is licensed under the [MIT License](LICENSE). It is provided as-is, without warranty; Windows, OpenDeck, device firmware, audio drivers, and third-party dependencies may behave differently across systems.
