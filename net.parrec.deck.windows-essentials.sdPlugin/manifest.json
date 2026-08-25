@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.13.0",
+  "Version": "0.14.0",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -113,31 +113,11 @@
     "UUID": "net.parrec.deck.windows-essentials.media-next"
   }, {
     "Icon": "imgs/lock-icon",
-    "Name": "Lock PC",
+    "Name": "Power Action",
     "Controllers": ["Keypad"],
-    "Tooltip": "Bloqueja la sessió de Windows.",
+    "PropertyInspectorPath": "propertyInspector/power-action.html",
+    "Tooltip": "Lock, sleep, restart or shut down Windows.",
     "States": [{ "Image": "imgs/lock-icon" }],
-    "UUID": "net.parrec.deck.windows-essentials.lock-pc"
-  }, {
-    "Icon": "imgs/sleep-icon",
-    "Name": "Sleep PC",
-    "Controllers": ["Keypad"],
-    "Tooltip": "Put Windows to sleep.",
-    "States": [{ "Image": "imgs/sleep-icon" }],
-    "UUID": "net.parrec.deck.windows-essentials.sleep-pc"
-  }, {
-    "Icon": "imgs/restart-icon",
-    "Name": "Restart PC",
-    "Controllers": ["Keypad"],
-    "Tooltip": "Restart Windows immediately.",
-    "States": [{ "Image": "imgs/restart-icon" }],
-    "UUID": "net.parrec.deck.windows-essentials.restart-pc"
-  }, {
-    "Icon": "imgs/shutdown-icon",
-    "Name": "Shut Down PC",
-    "Controllers": ["Keypad"],
-    "Tooltip": "Shut down Windows after confirmation.",
-    "States": [{ "Image": "imgs/shutdown-icon" }],
-    "UUID": "net.parrec.deck.windows-essentials.shutdown-pc"
+    "UUID": "net.parrec.deck.windows-essentials.power-action"
   }]
 }

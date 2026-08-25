@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { background: #202020; color: #ddd; font: 13px sans-serif; margin: 16px; }
+    label { display: block; margin: 8px 0 6px; color: #aaa; }
+    select { box-sizing: border-box; width: 100%; background: #303030; border: 1px solid #555; border-radius: 4px; color: #fff; padding: 7px; }
+    p { color: #aaa; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <label for="command">Power action</label>
+  <select id="command">
+    <option value="lock-pc">Lock PC</option>
+    <option value="sleep-pc">Sleep PC</option>
+    <option value="restart-pc">Restart PC</option>
+    <option value="shutdown-pc">Shut Down PC</option>
+  </select>
+  <p>Shut Down PC requires a second press within three seconds.</p>
+  <script>
+    let socket;
+    let context;
+    function connectElgatoStreamDeckSocket(inPort, inPropertyInspectorUUID, inRegisterEvent, inInfo, inActionInfo) {
+      const actionInfo = JSON.parse(inActionInfo);
+      context = actionInfo.context;
+      document.getElementById("command").value = actionInfo.payload.settings?.command || "lock-pc";
+      socket = new WebSocket("ws://localhost:" + inPort);
+      socket.onopen = () => socket.send(JSON.stringify({ event: inRegisterEvent, uuid: inPropertyInspectorUUID }));
+    }
+    document.getElementById("command").addEventListener("change", (event) => {
+      socket.send(JSON.stringify({ event: "setSettings", context, payload: { command: event.target.value } }));
+    });
+  </script>
+</body>
+</html>

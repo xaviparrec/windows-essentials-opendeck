@@ -71,20 +71,11 @@ test("manifest exposes configurable app volume as an encoder action", () => {
   assert.ok(fs.existsSync(path.join(folder, appVolume.PropertyInspectorPath)));
 });
 
-test("manifest exposes a keypad action to lock the PC", () => {
+test("manifest exposes the configurable power action", () => {
   const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
-  const lockAction = manifest.Actions.find((action) => action.UUID.endsWith(".lock-pc"));
-  assert.deepEqual(lockAction.Controllers, ["Keypad"]);
-  assert.equal(lockAction.States[0].Image, "imgs/lock-icon");
-});
-
-test("manifest exposes the power actions", () => {
-  const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
-  const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
-  for (const name of ["sleep-pc", "restart-pc", "shutdown-pc"]) {
-    const action = manifest.Actions.find((candidate) => candidate.UUID.endsWith(`.${name}`));
-    assert.deepEqual(action.Controllers, ["Keypad"]);
-    assert.ok(fs.existsSync(path.join(folder, `${action.States[0].Image}.svg`)));
-  }
+  const action = manifest.Actions.find((candidate) => candidate.UUID.endsWith(".power-action"));
+  assert.deepEqual(action.Controllers, ["Keypad"]);
+  assert.equal(action.PropertyInspectorPath, "propertyInspector/power-action.html");
+  assert.ok(fs.existsSync(path.join(folder, `${action.States[0].Image}.svg`)));
 });

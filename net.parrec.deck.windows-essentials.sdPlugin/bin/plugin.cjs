@@ -22,7 +22,9 @@ const SYSTEM_ACTIONS = new Map([
   ["net.parrec.deck.windows-essentials.restart-pc", "restart-pc"],
   ["net.parrec.deck.windows-essentials.shutdown-pc", "shutdown-pc"]
 ]);
+const POWER_ACTION_UUID = "net.parrec.deck.windows-essentials.power-action";
 const shutdownConfirmations = new Map();
+const powerSettings = new Map();
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -194,6 +196,29 @@ class WindowsEndpointVolume {
 
 }
 
+function updatePowerSettings(context, settings) {
+  powerSettings.set(context, settings?.command || "lock-pc");
+}
+
+async function runPowerAction(context) {
+  const command = powerSettings.get(context) || "lock-pc";
+  if (command === "lock-pc") {
+    await audio.lockWorkstation();
+    return;
+  }
+  if (command === "shutdown-pc") {
+    const expires = shutdownConfirmations.get(context) || 0;
+    if (expires < Date.now()) {
+      shutdownConfirmations.set(context, Date.now() + 3000);
+      socket.send({ event: "setTitle", context, payload: { title: "Press again" } });
+      setTimeout(() => shutdownConfirmations.delete(context), 3000).unref();
+      return;
+    }
+    shutdownConfirmations.delete(context);
+  }
+  await audio.power(command);
+}
+
 const port = Number(argument("-port"));
 const pluginUUID = argument("-pluginUUID");
 const registerEvent = argument("-registerEvent");
@@ -311,6 +336,10 @@ socket.connect(async (event) => {
       await refreshAppVolume(event.context);
       return;
     }
+    if (event.action === POWER_ACTION_UUID && event.event === "didReceiveSettings") {
+      updatePowerSettings(event.context, event.payload?.settings);
+      return;
+    }
     if ([OUTPUT_SWITCH_ACTION_UUID, OUTPUT_SELECTOR_ACTION_UUID].includes(event.action) && event.event === "sendToPlugin" && event.payload?.event === "getOutputs") {
       socket.send({ event: "sendToPropertyInspector", context: event.context, payload: { event: "outputs", outputs: await audio.listOutputs() } });
       return;
@@ -365,6 +394,11 @@ socket.connect(async (event) => {
       if ((event.event === "dialDown" || event.event === "keyDown") && settings?.pid) {
         displayAppVolume(event.context, await audio.toggleAppMute(settings.pid));
       }
+      return;
+    }
+    if (event.action === POWER_ACTION_UUID) {
+      if (event.event === "willAppear") updatePowerSettings(event.context, event.payload?.settings);
+      if (event.event === "keyDown") await runPowerAction(event.context);
       return;
     }
     if (event.action === PLAY_PAUSE_ACTION_UUID) {
