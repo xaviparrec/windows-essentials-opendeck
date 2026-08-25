@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ca">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <style>
@@ -10,11 +10,11 @@
   </style>
 </head>
 <body>
-  <label for="outputA">Primera sortida</label>
-  <select id="outputA"><option value="">Selecciona un dispositiu…</option></select>
-  <label for="outputB">Segona sortida</label>
-  <select id="outputB"><option value="">Selecciona un dispositiu…</option></select>
-  <p>En prémer el botó, Windows canviarà a l’altra sortida seleccionada.</p>
+  <label for="outputA">Speakers output</label>
+  <select id="outputA"><option value="">Select a device…</option></select>
+  <label for="outputB">Headphones output</label>
+  <select id="outputB"><option value="">Select a device…</option></select>
+  <p>The icon shows the active output. Press the button to switch to the other selected device.</p>
   <script>
     let socket;
     let context;
@@ -29,7 +29,7 @@
     function populate(outputs) {
       for (const select of [outputA, outputB]) {
         const selected = select === outputA ? savedSettings.outputA : savedSettings.outputB;
-        select.innerHTML = '<option value="">Selecciona un dispositiu…</option>';
+        select.innerHTML = '<option value="">Select a device…</option>';
         for (const output of outputs) {
           const option = document.createElement("option");
           option.value = output.id;

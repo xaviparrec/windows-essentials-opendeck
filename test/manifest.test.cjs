@@ -46,6 +46,8 @@ test("manifest exposes configurable audio-output action", () => {
   const output = manifest.Actions.find((action) => action.UUID.endsWith(".audio-output"));
   assert.deepEqual(output.Controllers, ["Keypad"]);
   assert.equal(output.PropertyInspectorPath, "propertyInspector/audio-output.html");
+  assert.equal(output.DisableAutomaticStates, true);
+  assert.deepEqual(output.States.map((state) => state.Image), ["imgs/output-icon", "imgs/headphones-icon"]);
   assert.ok(fs.existsSync(path.join(folder, output.PropertyInspectorPath)));
 });
 

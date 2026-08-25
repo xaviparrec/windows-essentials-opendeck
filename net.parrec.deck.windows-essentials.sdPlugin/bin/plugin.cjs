@@ -182,6 +182,7 @@ const displayFeedback = (context, feedback) => socket.send({
 });
 const action = new MasterVolumeAction(audio, displayFeedback);
 const outputSettings = new Map();
+const visibleOutputContexts = new Set();
 const microphoneAction = new MasterVolumeAction({
   get: () => audio.getMicrophone(),
   adjust: (ticks) => audio.adjustMicrophone(ticks),
@@ -199,6 +200,13 @@ function updateOutputSettings(context, settings) {
   });
 }
 
+async function updateOutputIcon(context) {
+  const settings = outputSettings.get(context);
+  if (!settings?.outputA || !settings.outputB) return;
+  const current = await audio.getDefaultOutput();
+  socket.send({ event: "setState", context, payload: { state: current.id === settings.outputB ? 1 : 0 } });
+}
+
 async function switchOutput(context) {
   const settings = outputSettings.get(context);
   if (!settings?.outputA || !settings.outputB) {
@@ -207,12 +215,20 @@ async function switchOutput(context) {
   const current = await audio.getDefaultOutput();
   const next = current.id === settings.outputA ? settings.outputB : settings.outputA;
   await audio.setOutput(next);
+  socket.send({ event: "setState", context, payload: { state: next === settings.outputB ? 1 : 0 } });
 }
+
+setInterval(() => {
+  for (const context of visibleOutputContexts) {
+    updateOutputIcon(context).catch((error) => console.error("Could not refresh audio-output icon:", error.message));
+  }
+}, 1500).unref();
 
 socket.connect(async (event) => {
   try {
     if (event.action === OUTPUT_SWITCH_ACTION_UUID && event.event === "didReceiveSettings") {
       updateOutputSettings(event.context, event.payload?.settings);
+      await updateOutputIcon(event.context);
       return;
     }
     if (event.action === OUTPUT_SWITCH_ACTION_UUID && event.event === "sendToPlugin" && event.payload?.event === "getOutputs") {
@@ -232,7 +248,12 @@ socket.connect(async (event) => {
       return;
     }
     if (event.action === OUTPUT_SWITCH_ACTION_UUID) {
-      if (event.event === "willAppear") updateOutputSettings(event.context, event.payload?.settings);
+      if (event.event === "willAppear") {
+        visibleOutputContexts.add(event.context);
+        updateOutputSettings(event.context, event.payload?.settings);
+        await updateOutputIcon(event.context);
+      }
+      if (event.event === "willDisappear") visibleOutputContexts.delete(event.context);
       if (event.event === "keyDown") await switchOutput(event.context);
       return;
     }
