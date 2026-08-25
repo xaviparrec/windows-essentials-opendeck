@@ -457,6 +457,7 @@ internal static class Program
     {
         int GetMixFormat();
         int GetDeviceFormat();
+        int ResetDeviceFormat();
         int SetDeviceFormat();
         int GetProcessingPeriod();
         int SetProcessingPeriod();
