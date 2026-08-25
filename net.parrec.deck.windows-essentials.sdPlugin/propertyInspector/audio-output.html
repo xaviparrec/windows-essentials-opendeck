@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { background: #202020; color: #ddd; font: 13px sans-serif; margin: 16px; }
+    label { display: block; margin: 14px 0 6px; color: #aaa; }
+    select { box-sizing: border-box; width: 100%; background: #303030; border: 1px solid #555; border-radius: 4px; color: #fff; padding: 7px; }
+    p { color: #aaa; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <label for="outputA">Primera sortida</label>
+  <select id="outputA"><option value="">Selecciona un dispositiu…</option></select>
+  <label for="outputB">Segona sortida</label>
+  <select id="outputB"><option value="">Selecciona un dispositiu…</option></select>
+  <p>En prémer el botó, Windows canviarà a l’altra sortida seleccionada.</p>
+  <script>
+    let socket;
+    let context;
+    let savedSettings = {};
+    const outputA = document.getElementById("outputA");
+    const outputB = document.getElementById("outputB");
+
+    function sendSettings() {
+      socket.send(JSON.stringify({ event: "setSettings", context, payload: { outputA: outputA.value, outputB: outputB.value } }));
+    }
+
+    function populate(outputs) {
+      for (const select of [outputA, outputB]) {
+        const selected = select === outputA ? savedSettings.outputA : savedSettings.outputB;
+        select.innerHTML = '<option value="">Selecciona un dispositiu…</option>';
+        for (const output of outputs) {
+          const option = document.createElement("option");
+          option.value = output.id;
+          option.textContent = output.name;
+          option.selected = output.id === selected;
+          select.appendChild(option);
+        }
+      }
+    }
+
+    function connectElgatoStreamDeckSocket(inPort, inPropertyInspectorUUID, inRegisterEvent, inInfo, inActionInfo) {
+      const actionInfo = JSON.parse(inActionInfo);
+      context = actionInfo.context;
+      savedSettings = actionInfo.payload.settings || {};
+      socket = new WebSocket("ws://localhost:" + inPort);
+      socket.onopen = () => {
+        socket.send(JSON.stringify({ event: inRegisterEvent, uuid: inPropertyInspectorUUID }));
+        socket.send(JSON.stringify({ event: "sendToPlugin", context, payload: { event: "getOutputs" } }));
+      };
+      socket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if (data.event === "sendToPropertyInspector" && data.payload?.event === "outputs") populate(data.payload.outputs);
+      };
+    }
+
+    outputA.addEventListener("change", sendSettings);
+    outputB.addEventListener("change", sendSettings);
+  </script>
+</body>
+</html>

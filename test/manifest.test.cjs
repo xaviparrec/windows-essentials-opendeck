@@ -40,6 +40,15 @@ test("manifest exposes microphone volume as an encoder action", () => {
   assert.ok(fs.existsSync(path.join(folder, "imgs", "microphone-icon.svg")));
 });
 
+test("manifest exposes configurable audio-output action", () => {
+  const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
+  const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
+  const output = manifest.Actions.find((action) => action.UUID.endsWith(".audio-output"));
+  assert.deepEqual(output.Controllers, ["Keypad"]);
+  assert.equal(output.PropertyInspectorPath, "propertyInspector/audio-output.html");
+  assert.ok(fs.existsSync(path.join(folder, output.PropertyInspectorPath)));
+});
+
 test("manifest exposes a keypad action to lock the PC", () => {
   const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));

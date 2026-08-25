@@ -89,8 +89,15 @@ internal static class Program
             case "mic-toggle-mute":
                 endpoints.Microphone.ToggleMute();
                 return endpoints.Microphone.Read();
+            case "list-outputs":
+                return ListOutputs();
+            case "get-default-output":
+                return new AudioOutput(GetDefaultOutputId(), string.Empty);
+            case "set-output" when !string.IsNullOrWhiteSpace(args.ElementAtOrDefault(1)):
+                SetDefaultOutput(args[1]);
+                return new AudioOutput(GetDefaultOutputId(), string.Empty);
             default:
-                throw new ArgumentException("Use: get | media <up|down|mute> [count] | adjust <signed ticks> | toggle-mute | mic-get | mic-adjust <signed ticks> | mic-toggle-mute");
+                throw new ArgumentException("Use: get | media <up|down|mute> [count] | adjust <signed ticks> | toggle-mute | mic-get | mic-adjust <signed ticks> | mic-toggle-mute | list-outputs | get-default-output | set-output <device id>");
         }
         return endpoint.Read();
     }
@@ -157,6 +164,105 @@ internal static class Program
 
     [DllImport("user32.dll")]
     private static extern void keybd_event(byte virtualKey, byte scanCode, uint flags, UIntPtr extraInfo);
+
+    [DllImport("ole32.dll")]
+    private static extern int PropVariantClear(ref PropVariant propVariant);
+
+    private static List<AudioOutput> ListOutputs()
+    {
+        var enumerator = (IMMDeviceEnumerator)new MMDeviceEnumeratorComObject();
+        try
+        {
+            Marshal.ThrowExceptionForHR(enumerator.EnumAudioEndpoints(EDataFlow.eRender, 1, out var devices));
+            try
+            {
+                Marshal.ThrowExceptionForHR(devices.GetCount(out var count));
+                var outputs = new List<AudioOutput>();
+                for (uint index = 0; index < count; index++)
+                {
+                    Marshal.ThrowExceptionForHR(devices.Item(index, out var device));
+                    try
+                    {
+                        Marshal.ThrowExceptionForHR(device.GetId(out var id));
+                        outputs.Add(new AudioOutput(id, ReadFriendlyName(device)));
+                    }
+                    finally
+                    {
+                        Marshal.ReleaseComObject(device);
+                    }
+                }
+                return outputs;
+            }
+            finally
+            {
+                Marshal.ReleaseComObject(devices);
+            }
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(enumerator);
+        }
+    }
+
+    private static string GetDefaultOutputId()
+    {
+        var enumerator = (IMMDeviceEnumerator)new MMDeviceEnumeratorComObject();
+        try
+        {
+            Marshal.ThrowExceptionForHR(enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out var device));
+            try
+            {
+                Marshal.ThrowExceptionForHR(device.GetId(out var id));
+                return id;
+            }
+            finally
+            {
+                Marshal.ReleaseComObject(device);
+            }
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(enumerator);
+        }
+    }
+
+    private static string ReadFriendlyName(IMMDevice device)
+    {
+        Marshal.ThrowExceptionForHR(device.OpenPropertyStore(0, out var store));
+        try
+        {
+            var key = new PropertyKey(new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 14);
+            Marshal.ThrowExceptionForHR(store.GetValue(ref key, out var value));
+            try
+            {
+                return value.Value ?? "Unknown output";
+            }
+            finally
+            {
+                PropVariantClear(ref value);
+            }
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(store);
+        }
+    }
+
+    private static void SetDefaultOutput(string deviceId)
+    {
+        var policy = (IPolicyConfig)new PolicyConfigClient();
+        try
+        {
+            foreach (var role in Enum.GetValues<ERole>())
+            {
+                Marshal.ThrowExceptionForHR(policy.SetDefaultEndpoint(deviceId, role));
+            }
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(policy);
+        }
+    }
 
     private sealed class AudioEndpoints : IDisposable
     {
@@ -260,9 +366,26 @@ internal static class Program
 
     private sealed record VolumeState(int level, bool muted);
     private sealed record MediaPlaybackState(bool isPlaying, string status);
+    private sealed record AudioOutput(string id, string name);
 
     private enum EDataFlow { eRender, eCapture, eAll }
     private enum ERole { eConsole, eMultimedia, eCommunications }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PropertyKey
+    {
+        public PropertyKey(Guid formatId, uint propertyId) { this.FormatId = formatId; this.PropertyId = propertyId; }
+        public Guid FormatId;
+        public uint PropertyId;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    private struct PropVariant
+    {
+        [FieldOffset(0)] private ushort valueType;
+        [FieldOffset(8)] private IntPtr pointerValue;
+        public string? Value => this.valueType == 31 && this.pointerValue != IntPtr.Zero ? Marshal.PtrToStringUni(this.pointerValue) : null;
+    }
 
     [ComImport, Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IMMDeviceEnumerator
@@ -288,7 +411,7 @@ internal static class Program
     private interface IMMDevice
     {
         int Activate(ref Guid interfaceId, int classContext, IntPtr activationParameters, out IAudioEndpointVolume endpointVolume);
-        int OpenPropertyStore(int storageAccessMode, out IntPtr properties);
+        int OpenPropertyStore(int storageAccessMode, out IPropertyStore properties);
         int GetId([MarshalAs(UnmanagedType.LPWStr)] out string id);
         int GetState(out int state);
     }
@@ -314,5 +437,34 @@ internal static class Program
         int VolumeStepDown(Guid eventContext);
         int QueryHardwareSupport(out uint hardwareSupportMask);
         int GetVolumeRange(out float minDb, out float maxDb, out float incrementDb);
+    }
+
+    [ComImport, Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IPropertyStore
+    {
+        int GetCount(out uint count);
+        int GetAt(uint index, out PropertyKey key);
+        int GetValue(ref PropertyKey key, out PropVariant value);
+        int SetValue(ref PropertyKey key, ref PropVariant value);
+        int Commit();
+    }
+
+    [ComImport, Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9")]
+    private class PolicyConfigClient;
+
+    [ComImport, Guid("F8679F50-850A-41CF-9C72-430F290290C8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IPolicyConfig
+    {
+        int GetMixFormat();
+        int GetDeviceFormat();
+        int SetDeviceFormat();
+        int GetProcessingPeriod();
+        int SetProcessingPeriod();
+        int GetShareMode();
+        int SetShareMode();
+        int GetPropertyValue();
+        int SetPropertyValue();
+        int SetDefaultEndpoint([MarshalAs(UnmanagedType.LPWStr)] string deviceId, ERole role);
+        int SetEndpointVisibility();
     }
 }

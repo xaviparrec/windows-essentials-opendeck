@@ -1,6 +1,6 @@
 {
   "name": "windows-essentials-opendeck",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "description": "OpenDeck / Stream Deck compatible Windows master-volume encoder plugin.",
   "scripts": {
