@@ -2,11 +2,11 @@
   "SDKVersion": 2,
   "Author": "Xavi",
   "CodePath": "bin/plugin.cjs",
-  "Description": "Controla el volum master de Windows amb un encoder.",
+  "Description": "Controla el volum master i el micròfon de Windows amb un encoder.",
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.7.1",
+  "Version": "0.8.0",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -27,6 +27,21 @@
     "Tooltip": "Gira per ajustar el volum; prem per silenciar.",
     "States": [{ "Image": "imgs/volume-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.master-volume"
+  }, {
+    "Icon": "imgs/microphone-icon",
+    "Name": "Microphone Volume",
+    "Controllers": ["Encoder"],
+    "Encoder": {
+      "layout": "$B1",
+      "Icon": "imgs/microphone-icon",
+      "TriggerDescription": {
+        "Rotate": "Puja o baixa el volum del micròfon",
+        "Push": "Activa o desactiva el silenci del micròfon"
+      }
+    },
+    "Tooltip": "Gira per ajustar el micròfon; prem per silenciar-lo.",
+    "States": [{ "Image": "imgs/microphone-icon" }],
+    "UUID": "net.parrec.deck.windows-essentials.microphone-volume"
   }, {
     "Icon": "imgs/media-toggle-icon",
     "Name": "Media: Play / Pause",

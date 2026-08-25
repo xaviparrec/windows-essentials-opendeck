@@ -24,3 +24,9 @@ test("encoder press uses Windows' actual mute state", async () => {
   assert.deepEqual(titles[0][1], { title: "Muted", value: "Muted", indicator: 0 });
   assert.deepEqual(titles[1][1], { title: "Master volume", value: "50%", indicator: 50 });
 });
+
+test("microphone feedback uses its own labels", () => {
+  const action = new MasterVolumeAction({}, () => {}, "Microphone", "Mic muted");
+  assert.deepEqual(action.feedback({ level: 64, muted: false }), { title: "Microphone", value: "64%", indicator: 64 });
+  assert.deepEqual(action.feedback({ level: 64, muted: true }), { title: "Mic muted", value: "Muted", indicator: 0 });
+});

@@ -7,6 +7,7 @@ const { spawn } = require("node:child_process");
 const { MasterVolumeAction } = require("./volume-action.cjs");
 
 const MASTER_VOLUME_ACTION_UUID = "net.parrec.deck.windows-essentials.master-volume";
+const MICROPHONE_VOLUME_ACTION_UUID = "net.parrec.deck.windows-essentials.microphone-volume";
 const PLAY_PAUSE_ACTION_UUID = "net.parrec.deck.windows-essentials.media-play-pause";
 const MEDIA_ACTIONS = new Map([
   ["net.parrec.deck.windows-essentials.media-previous", "previous"],
@@ -106,6 +107,9 @@ class WindowsEndpointVolume {
   sendMediaKey(key) { return this.run("key", key); }
   getPlaybackState() { return this.run("media-state"); }
   togglePlayback() { return this.run("media-toggle"); }
+  getMicrophone() { return this.run("mic-get"); }
+  adjustMicrophone(ticks) { return this.run("mic-adjust", String(ticks)); }
+  toggleMicrophoneMute() { return this.run("mic-toggle-mute"); }
 
   lockWorkstation() {
     return new Promise((resolve, reject) => {
@@ -168,10 +172,16 @@ if (!port || !pluginUUID || !registerEvent) throw new Error("OpenDeck/Stream Dec
 
 const socket = new StreamDeckSocket(port, pluginUUID, registerEvent, info);
 const audio = new WindowsEndpointVolume();
-const action = new MasterVolumeAction(audio, (context, feedback) => socket.send({
+const displayFeedback = (context, feedback) => socket.send({
   // $B1 is the encoder layout: title, value and indicator are its named fields.
   event: "setFeedback", context, payload: feedback
-}));
+});
+const action = new MasterVolumeAction(audio, displayFeedback);
+const microphoneAction = new MasterVolumeAction({
+  get: () => audio.getMicrophone(),
+  adjust: (ticks) => audio.adjustMicrophone(ticks),
+  toggleMute: () => audio.toggleMicrophoneMute()
+}, displayFeedback, "Microphone", "Mic muted");
 
 function updatePlayPauseIcon(context, playback) {
   socket.send({ event: "setState", context, payload: { state: playback.isPlaying ? 1 : 0 } });
@@ -183,6 +193,12 @@ socket.connect(async (event) => {
       if (event.event === "willAppear") await action.appear(event.context);
       if (event.event === "dialRotate") await action.rotate(event.context, event.payload?.ticks);
       if (event.event === "dialDown" || event.event === "keyDown") await action.press(event.context);
+      return;
+    }
+    if (event.action === MICROPHONE_VOLUME_ACTION_UUID) {
+      if (event.event === "willAppear") await microphoneAction.appear(event.context);
+      if (event.event === "dialRotate") await microphoneAction.rotate(event.context, event.payload?.ticks);
+      if (event.event === "dialDown" || event.event === "keyDown") await microphoneAction.press(event.context);
       return;
     }
     if (event.action === PLAY_PAUSE_ACTION_UUID) {

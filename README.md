@@ -14,6 +14,7 @@ The plugin sends Windows multimedia keys through the built-in `user32.dll` API. 
 
 - **Media: Play / Pause**, **Previous** and **Next**: basic multimedia transport.
 - **Lock PC**: locks the current Windows session.
+- **Microphone Volume**: an encoder action for the default microphone. Rotate it to adjust the level; press it to mute or unmute.
 
 The Play / Pause button asks Windows for the actual playback state when it appears, and again after a press. Its icon therefore starts correctly even when music was already playing.
 
@@ -26,7 +27,7 @@ npm test
 npm run package
 ```
 
-Install `release/Windows-Essentials-0.7.1.streamDeckPlugin` from OpenDeck's plugin installer. If OpenDeck lets you select an unpacked plugin folder, `net.parrec.deck.windows-essentials.sdPlugin` is also the development folder.
+Install `release/Windows-Essentials-0.8.0.streamDeckPlugin` from OpenDeck's plugin installer. If OpenDeck lets you select an unpacked plugin folder, `net.parrec.deck.windows-essentials.sdPlugin` is also the development folder.
 
 OpenDeck must be able to find Node.js 20 or later on your `PATH`; this computer currently has Node 24.
 

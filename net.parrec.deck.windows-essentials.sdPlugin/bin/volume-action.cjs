@@ -2,9 +2,11 @@
 
 /** Domain logic kept independent from OpenDeck so it can be tested without hardware. */
 class MasterVolumeAction {
-  constructor(audio, display) {
+  constructor(audio, display, label = "Master volume", mutedLabel = "Muted") {
     this.audio = audio;
     this.display = display;
+    this.label = label;
+    this.mutedLabel = mutedLabel;
   }
 
   async appear(context) {
@@ -23,7 +25,7 @@ class MasterVolumeAction {
 
   feedback(state) {
     return {
-      title: state.muted ? "Muted" : "Master volume",
+      title: state.muted ? this.mutedLabel : this.label,
       value: state.muted ? "Muted" : `${state.level}%`,
       indicator: state.muted ? 0 : state.level
     };

@@ -17,8 +17,8 @@ internal static class Program
 
         try
         {
-            using var endpoint = new EndpointVolume();
-            Console.WriteLine(JsonSerializer.Serialize(Execute(endpoint, args)));
+            using var endpoints = new AudioEndpoints();
+            Console.WriteLine(JsonSerializer.Serialize(Execute(endpoints, args)));
             return 0;
         }
         catch (Exception exception)
@@ -32,13 +32,13 @@ internal static class Program
     {
         try
         {
-            using var endpoint = new EndpointVolume();
+            using var endpoints = new AudioEndpoints();
             string? line;
             while ((line = Console.ReadLine()) is not null)
             {
                 try
                 {
-                    Console.WriteLine(JsonSerializer.Serialize(Execute(endpoint, line.Split(' ', StringSplitOptions.RemoveEmptyEntries))));
+                    Console.WriteLine(JsonSerializer.Serialize(Execute(endpoints, line.Split(' ', StringSplitOptions.RemoveEmptyEntries))));
                 }
                 catch (Exception exception)
                 {
@@ -55,8 +55,9 @@ internal static class Program
         }
     }
 
-    private static object Execute(EndpointVolume endpoint, string[] args)
+    private static object Execute(AudioEndpoints endpoints, string[] args)
     {
+        var endpoint = endpoints.Master;
         switch (args.FirstOrDefault())
         {
             case "get":
@@ -80,8 +81,16 @@ internal static class Program
             case "toggle-mute":
                 endpoint.ToggleMute();
                 break;
+            case "mic-get":
+                return endpoints.Microphone.Read();
+            case "mic-adjust" when int.TryParse(args.ElementAtOrDefault(1), out var microphoneTicks):
+                endpoints.Microphone.Adjust(microphoneTicks * 0.02f);
+                return endpoints.Microphone.Read();
+            case "mic-toggle-mute":
+                endpoints.Microphone.ToggleMute();
+                return endpoints.Microphone.Read();
             default:
-                throw new ArgumentException("Use: get | media <up|down|mute> [count] | adjust <signed ticks> | toggle-mute");
+                throw new ArgumentException("Use: get | media <up|down|mute> [count] | adjust <signed ticks> | toggle-mute | mic-get | mic-adjust <signed ticks> | mic-toggle-mute");
         }
         return endpoint.Read();
     }
@@ -149,18 +158,77 @@ internal static class Program
     [DllImport("user32.dll")]
     private static extern void keybd_event(byte virtualKey, byte scanCode, uint flags, UIntPtr extraInfo);
 
+    private sealed class AudioEndpoints : IDisposable
+    {
+        private EndpointVolume? microphone;
+
+        public AudioEndpoints()
+        {
+            this.Master = new EndpointVolume(EDataFlow.eRender, ERole.eMultimedia);
+        }
+
+        public EndpointVolume Master { get; }
+        public EndpointVolume Microphone => this.microphone ??= new EndpointVolume(EDataFlow.eCapture, ERole.eCommunications, ERole.eMultimedia);
+
+        public void Dispose()
+        {
+            this.microphone?.Dispose();
+            this.Master.Dispose();
+        }
+    }
+
     private sealed class EndpointVolume : IDisposable
     {
         private readonly IMMDevice device;
         private readonly IAudioEndpointVolume volume;
 
-        public EndpointVolume()
+        public EndpointVolume(EDataFlow dataFlow, params ERole[] roles)
         {
             var enumerator = (IMMDeviceEnumerator)new MMDeviceEnumeratorComObject();
-            Marshal.ThrowExceptionForHR(enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out this.device));
-            var audioEndpointVolumeGuid = AudioEndpointVolumeGuid;
-            Marshal.ThrowExceptionForHR(this.device.Activate(ref audioEndpointVolumeGuid, 23, IntPtr.Zero, out this.volume));
-            Marshal.ReleaseComObject(enumerator);
+            try
+            {
+                IMMDevice? selectedDevice = null;
+                var result = -1;
+                foreach (var role in roles)
+                {
+                    result = enumerator.GetDefaultAudioEndpoint(dataFlow, role, out selectedDevice);
+                    if (result >= 0)
+                    {
+                        break;
+                    }
+                }
+                if (result < 0 && dataFlow == EDataFlow.eCapture)
+                {
+                    result = enumerator.EnumAudioEndpoints(EDataFlow.eCapture, 1, out var devices);
+                    if (result >= 0)
+                    {
+                        try
+                        {
+                            Marshal.ThrowExceptionForHR(devices.GetCount(out var count));
+                            if (count > 0)
+                            {
+                                result = devices.Item(0, out selectedDevice);
+                            }
+                            else
+                            {
+                                result = unchecked((int)0x80070490);
+                            }
+                        }
+                        finally
+                        {
+                            Marshal.ReleaseComObject(devices);
+                        }
+                    }
+                }
+                Marshal.ThrowExceptionForHR(result);
+                this.device = selectedDevice!;
+                var audioEndpointVolumeGuid = AudioEndpointVolumeGuid;
+                Marshal.ThrowExceptionForHR(this.device.Activate(ref audioEndpointVolumeGuid, 23, IntPtr.Zero, out this.volume));
+            }
+            finally
+            {
+                Marshal.ReleaseComObject(enumerator);
+            }
         }
 
         public VolumeState Read()
@@ -199,7 +267,7 @@ internal static class Program
     [ComImport, Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IMMDeviceEnumerator
     {
-        int EnumAudioEndpoints(EDataFlow dataFlow, int stateMask, out IntPtr devices);
+        int EnumAudioEndpoints(EDataFlow dataFlow, int stateMask, out IMMDeviceCollection devices);
         int GetDefaultAudioEndpoint(EDataFlow dataFlow, ERole role, out IMMDevice endpoint);
         int GetDevice([MarshalAs(UnmanagedType.LPWStr)] string id, out IMMDevice device);
         int RegisterEndpointNotificationCallback(IntPtr client);
@@ -208,6 +276,13 @@ internal static class Program
 
     [ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")]
     private class MMDeviceEnumeratorComObject;
+
+    [ComImport, Guid("0BD7A1BE-7A1A-44DB-8397-CC5392387B5E"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IMMDeviceCollection
+    {
+        int GetCount(out uint count);
+        int Item(uint index, out IMMDevice device);
+    }
 
     [ComImport, Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IMMDevice

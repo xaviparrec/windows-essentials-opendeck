@@ -31,6 +31,15 @@ test("manifest exposes the basic media controls as keypad actions", () => {
   assert.deepEqual(playPause.States.map((state) => state.Image), ["imgs/play-pause-icon", "imgs/pause-icon"]);
 });
 
+test("manifest exposes microphone volume as an encoder action", () => {
+  const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
+  const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
+  const microphone = manifest.Actions.find((action) => action.UUID.endsWith(".microphone-volume"));
+  assert.deepEqual(microphone.Controllers, ["Encoder"]);
+  assert.equal(microphone.States[0].Image, "imgs/microphone-icon");
+  assert.ok(fs.existsSync(path.join(folder, "imgs", "microphone-icon.svg")));
+});
+
 test("manifest exposes a keypad action to lock the PC", () => {
   const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
