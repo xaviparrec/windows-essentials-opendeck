@@ -17,8 +17,12 @@ const MEDIA_ACTIONS = new Map([
   ["net.parrec.deck.windows-essentials.media-next", "next"]
 ]);
 const SYSTEM_ACTIONS = new Map([
-  ["net.parrec.deck.windows-essentials.lock-pc", "lock-pc"]
+  ["net.parrec.deck.windows-essentials.lock-pc", "lock-pc"],
+  ["net.parrec.deck.windows-essentials.sleep-pc", "sleep-pc"],
+  ["net.parrec.deck.windows-essentials.restart-pc", "restart-pc"],
+  ["net.parrec.deck.windows-essentials.shutdown-pc", "shutdown-pc"]
 ]);
+const shutdownConfirmations = new Map();
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -127,6 +131,21 @@ class WindowsEndpointVolume {
       const child = spawn("rundll32.exe", ["user32.dll,LockWorkStation"], { windowsHide: true, stdio: "ignore" });
       child.on("error", reject);
       child.on("close", (code) => code === 0 ? resolve() : reject(new Error(`Windows lock command exited with code ${code}.`)));
+    });
+  }
+
+  power(command) {
+    const commands = {
+      "sleep-pc": ["rundll32.exe", ["powrprof.dll,SetSuspendState", "0,1,0"]],
+      "restart-pc": ["shutdown.exe", ["/r", "/t", "0"]],
+      "shutdown-pc": ["shutdown.exe", ["/s", "/t", "0"]]
+    };
+    const [executable, args] = commands[command] || [];
+    if (!executable) return Promise.reject(new Error(`Unknown power command: ${command}`));
+    return new Promise((resolve, reject) => {
+      const child = spawn(executable, args, { windowsHide: true, stdio: "ignore" });
+      child.on("error", reject);
+      child.on("close", (code) => code === 0 ? resolve() : reject(new Error(`Windows power command exited with code ${code}.`)));
     });
   }
 
@@ -357,7 +376,23 @@ socket.connect(async (event) => {
     if (mediaKey && event.event === "keyDown") await audio.sendMediaKey(mediaKey);
 
     const systemAction = SYSTEM_ACTIONS.get(event.action);
-    if (systemAction === "lock-pc" && event.event === "keyDown") await audio.lockWorkstation();
+    if (systemAction && event.event === "keyDown") {
+      if (systemAction === "lock-pc") {
+        await audio.lockWorkstation();
+      } else if (systemAction === "shutdown-pc") {
+        const expires = shutdownConfirmations.get(event.context) || 0;
+        if (expires < Date.now()) {
+          shutdownConfirmations.set(event.context, Date.now() + 3000);
+          socket.send({ event: "setTitle", context: event.context, payload: { title: "Press again" } });
+          setTimeout(() => shutdownConfirmations.delete(event.context), 3000).unref();
+        } else {
+          shutdownConfirmations.delete(event.context);
+          await audio.power(systemAction);
+        }
+      } else {
+        await audio.power(systemAction);
+      }
+    }
   } catch (error) {
     console.error("Could not run Windows Essentials action:", error.message);
   }

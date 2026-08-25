@@ -78,3 +78,13 @@ test("manifest exposes a keypad action to lock the PC", () => {
   assert.deepEqual(lockAction.Controllers, ["Keypad"]);
   assert.equal(lockAction.States[0].Image, "imgs/lock-icon");
 });
+
+test("manifest exposes the power actions", () => {
+  const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
+  const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
+  for (const name of ["sleep-pc", "restart-pc", "shutdown-pc"]) {
+    const action = manifest.Actions.find((candidate) => candidate.UUID.endsWith(`.${name}`));
+    assert.deepEqual(action.Controllers, ["Keypad"]);
+    assert.ok(fs.existsSync(path.join(folder, `${action.States[0].Image}.svg`)));
+  }
+});
