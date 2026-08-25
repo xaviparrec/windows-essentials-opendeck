@@ -1,0 +1,16 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+test("manifest includes OpenDeck's required action state and encoder declaration", () => {
+  const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
+  const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
+  const action = manifest.Actions[0];
+  assert.equal(manifest.CodePath, "bin/plugin.cjs");
+  assert.ok(action.Controllers.includes("Encoder"));
+  assert.ok(Array.isArray(action.States) && action.States.length > 0);
+  assert.ok(fs.existsSync(path.join(folder, `${action.States[0].Image}.svg`)));
+});

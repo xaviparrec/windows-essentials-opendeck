@@ -1,0 +1,31 @@
+{
+  "SDKVersion": 2,
+  "Author": "Xavi",
+  "CodePath": "bin/plugin.cjs",
+  "Description": "Controla el volum master de Windows amb un encoder.",
+  "Name": "Windows Essentials",
+  "Icon": "imgs/plugin-icon",
+  "URL": "https://github.com/",
+  "Version": "0.5.0",
+  "Software": { "MinimumVersion": "6.5" },
+  "Nodejs": { "Version": "20" },
+  "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
+  "Category": "Windows Essentials",
+  "CategoryIcon": "imgs/plugin-icon",
+  "Actions": [{
+    "Icon": "imgs/volume-icon",
+    "Name": "Master Volume",
+    "Controllers": ["Encoder"],
+    "Encoder": {
+      "layout": "$B1",
+      "Icon": "imgs/volume-icon",
+      "TriggerDescription": {
+        "Rotate": "Puja o baixa el volum master",
+        "Push": "Activa o desactiva el silenci"
+      }
+    },
+    "Tooltip": "Gira per ajustar el volum; prem per silenciar.",
+    "States": [{ "Image": "imgs/volume-icon" }],
+    "UUID": "net.parrec.deck.windows-essentials.master-volume"
+  }]
+}

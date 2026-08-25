@@ -1,0 +1,13 @@
+# Generated .NET artifacts
+audio-helper/bin/
+audio-helper/obj/
+
+# The native helper is rebuilt by `npm run package`.
+net.parrec.deck.windows-essentials.sdPlugin/bin/audio-helper/
+
+# Distributable packages are generated releases.
+release/
+
+# Local editor files
+.vscode/
+.idea/
