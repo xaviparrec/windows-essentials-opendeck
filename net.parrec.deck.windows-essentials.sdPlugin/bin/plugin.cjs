@@ -9,6 +9,7 @@ const { MasterVolumeAction } = require("./volume-action.cjs");
 const MASTER_VOLUME_ACTION_UUID = "net.parrec.deck.windows-essentials.master-volume";
 const MICROPHONE_VOLUME_ACTION_UUID = "net.parrec.deck.windows-essentials.microphone-volume";
 const OUTPUT_SWITCH_ACTION_UUID = "net.parrec.deck.windows-essentials.audio-output";
+const OUTPUT_SELECTOR_ACTION_UUID = "net.parrec.deck.windows-essentials.audio-output-selector";
 const PLAY_PAUSE_ACTION_UUID = "net.parrec.deck.windows-essentials.media-play-pause";
 const MEDIA_ACTIONS = new Map([
   ["net.parrec.deck.windows-essentials.media-previous", "previous"],
@@ -114,6 +115,7 @@ class WindowsEndpointVolume {
   listOutputs() { return this.run("list-outputs"); }
   getDefaultOutput() { return this.run("get-default-output"); }
   setOutput(id) { return this.run("set-output", id); }
+  cycleOutput(ticks) { return this.run("cycle-output", String(ticks)); }
 
   lockWorkstation() {
     return new Promise((resolve, reject) => {
@@ -218,6 +220,18 @@ async function switchOutput(context) {
   socket.send({ event: "setState", context, payload: { state: next === settings.outputB ? 1 : 0 } });
 }
 
+function displaySelectedOutput(context, output) {
+  socket.send({
+    event: "setFeedback",
+    context,
+    payload: {
+      title: "Audio output",
+      value: output.name || "Unknown output",
+      indicator: 0
+    }
+  });
+}
+
 setInterval(() => {
   for (const context of visibleOutputContexts) {
     updateOutputIcon(context).catch((error) => console.error("Could not refresh audio-output icon:", error.message));
@@ -255,6 +269,16 @@ socket.connect(async (event) => {
       }
       if (event.event === "willDisappear") visibleOutputContexts.delete(event.context);
       if (event.event === "keyDown") await switchOutput(event.context);
+      return;
+    }
+    if (event.action === OUTPUT_SELECTOR_ACTION_UUID) {
+      if (event.event === "willAppear" || event.event === "dialDown" || event.event === "keyDown") {
+        displaySelectedOutput(event.context, await audio.getDefaultOutput());
+      }
+      if (event.event === "dialRotate") {
+        const ticks = Number(event.payload?.ticks) || 0;
+        if (ticks !== 0) displaySelectedOutput(event.context, await audio.cycleOutput(ticks));
+      }
       return;
     }
     if (event.action === PLAY_PAUSE_ACTION_UUID) {

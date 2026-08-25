@@ -92,12 +92,14 @@ internal static class Program
             case "list-outputs":
                 return ListOutputs();
             case "get-default-output":
-                return new AudioOutput(GetDefaultOutputId(), string.Empty);
+                return GetDefaultOutput();
             case "set-output" when !string.IsNullOrWhiteSpace(args.ElementAtOrDefault(1)):
                 SetDefaultOutput(args[1]);
-                return new AudioOutput(GetDefaultOutputId(), string.Empty);
+                return GetDefaultOutput();
+            case "cycle-output" when int.TryParse(args.ElementAtOrDefault(1), out var outputTicks):
+                return CycleOutput(outputTicks);
             default:
-                throw new ArgumentException("Use: get | media <up|down|mute> [count] | adjust <signed ticks> | toggle-mute | mic-get | mic-adjust <signed ticks> | mic-toggle-mute | list-outputs | get-default-output | set-output <device id>");
+                throw new ArgumentException("Use: get | media <up|down|mute> [count] | adjust <signed ticks> | toggle-mute | mic-get | mic-adjust <signed ticks> | mic-toggle-mute | list-outputs | get-default-output | set-output <device id> | cycle-output <signed ticks>");
         }
         return endpoint.Read();
     }
@@ -204,7 +206,7 @@ internal static class Program
         }
     }
 
-    private static string GetDefaultOutputId()
+    private static AudioOutput GetDefaultOutput()
     {
         var enumerator = (IMMDeviceEnumerator)new MMDeviceEnumeratorComObject();
         try
@@ -213,7 +215,7 @@ internal static class Program
             try
             {
                 Marshal.ThrowExceptionForHR(device.GetId(out var id));
-                return id;
+                return new AudioOutput(id, ReadFriendlyName(device));
             }
             finally
             {
@@ -224,6 +226,25 @@ internal static class Program
         {
             Marshal.ReleaseComObject(enumerator);
         }
+    }
+
+    private static AudioOutput CycleOutput(int ticks)
+    {
+        var outputs = ListOutputs();
+        if (outputs.Count == 0)
+        {
+            throw new InvalidOperationException("No active audio output is available.");
+        }
+        var currentId = GetDefaultOutput().id;
+        var currentIndex = outputs.FindIndex(output => output.id == currentId);
+        if (currentIndex < 0)
+        {
+            currentIndex = 0;
+        }
+        var nextIndex = (currentIndex + (ticks % outputs.Count) + outputs.Count) % outputs.Count;
+        var next = outputs[nextIndex];
+        SetDefaultOutput(next.id);
+        return next;
     }
 
     private static string ReadFriendlyName(IMMDevice device)

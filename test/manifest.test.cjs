@@ -51,6 +51,15 @@ test("manifest exposes configurable audio-output action", () => {
   assert.ok(fs.existsSync(path.join(folder, output.PropertyInspectorPath)));
 });
 
+test("manifest exposes audio-output selector as an encoder action", () => {
+  const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
+  const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
+  const selector = manifest.Actions.find((action) => action.UUID.endsWith(".audio-output-selector"));
+  assert.deepEqual(selector.Controllers, ["Encoder"]);
+  assert.equal(selector.Encoder.layout, "$B1");
+  assert.equal(selector.States[0].Image, "imgs/output-icon");
+});
+
 test("manifest exposes a keypad action to lock the PC", () => {
   const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
   const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
