@@ -13,7 +13,7 @@
   "Category": "Windows Essentials",
   "CategoryIcon": "imgs/plugin-icon",
   "Actions": [{
-    "Icon": "imgs/output-icon",
+    "Icon": "imgs/volume-icon",
     "Name": "Master Volume",
     "Controllers": ["Encoder"],
     "Encoder": {
