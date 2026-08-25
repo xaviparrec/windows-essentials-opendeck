@@ -2,8 +2,8 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $pluginFolder = Join-Path $projectRoot 'net.parrec.deck.windows-essentials.sdPlugin'
 $releaseFolder = Join-Path $projectRoot 'release'
-$zipPath = Join-Path $releaseFolder 'Parrec-Windows-Essentials-0.5.0.zip'
-$packagePath = Join-Path $releaseFolder 'Parrec-Windows-Essentials-0.5.0.streamDeckPlugin'
+$zipPath = Join-Path $releaseFolder 'Windows-Essentials-0.5.0.zip'
+$packagePath = Join-Path $releaseFolder 'Windows-Essentials-0.5.0.streamDeckPlugin'
 
 New-Item -ItemType Directory -Force -Path $releaseFolder | Out-Null
 Remove-Item -Force -ErrorAction SilentlyContinue $zipPath, $packagePath
