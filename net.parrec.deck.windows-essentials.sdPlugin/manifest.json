@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/",
-  "Version": "0.6.1",
+  "Version": "0.6.2",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -28,7 +28,7 @@
     "States": [{ "Image": "imgs/volume-icon" }],
     "UUID": "net.parrec.deck.windows-essentials.master-volume"
   }, {
-    "Icon": "imgs/play-pause-icon",
+    "Icon": "imgs/media-toggle-icon",
     "Name": "Media: Play / Pause",
     "Controllers": ["Keypad"],
     "Tooltip": "Reprodueix o pausa el contingut multimèdia.",

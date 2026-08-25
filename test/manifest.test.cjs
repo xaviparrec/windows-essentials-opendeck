@@ -26,5 +26,6 @@ test("manifest exposes the basic media controls as keypad actions", () => {
   ]);
   assert.ok(mediaActions.every((action) => action.Controllers.includes("Keypad")));
   const playPause = mediaActions.find((action) => action.UUID.endsWith("media-play-pause"));
+  assert.equal(playPause.Icon, "imgs/media-toggle-icon");
   assert.deepEqual(playPause.States.map((state) => state.Image), ["imgs/play-pause-icon", "imgs/pause-icon"]);
 });
