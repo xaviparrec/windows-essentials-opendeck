@@ -7,6 +7,7 @@ net.parrec.deck.windows-essentials.sdPlugin/bin/audio-helper/
 
 # Distributable packages are generated releases.
 release/
+marketplace-submission/
 
 # Local editor files
 .vscode/
