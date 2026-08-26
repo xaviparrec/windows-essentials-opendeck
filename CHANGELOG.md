@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.1] - 2026-08-26
+
+### Fixed
+
+- Play/Pause now polls the real Windows playback state while visible, so external Spotify or media-key changes update the icon.
+- App Volume recovers the current process ID from the saved application name after an application or OpenDeck restart.
+
 ## [0.16.0] - 2026-08-25
 
 ### Changed

@@ -252,6 +252,7 @@ const outputSettings = new Map();
 const outputSelectorSettings = new Map();
 const appVolumeSettings = new Map();
 const visibleOutputContexts = new Set();
+const visiblePlayPauseContexts = new Set();
 const microphoneAction = new MasterVolumeAction({
   get: () => audio.getMicrophone(),
   adjust: (ticks) => audio.adjustMicrophone(ticks),
@@ -275,6 +276,17 @@ function updateOutputSelectorSettings(context, settings) {
 
 function updateAppVolumeSettings(context, settings) {
   appVolumeSettings.set(context, { pid: Number(settings?.pid) || 0, name: settings?.name || "" });
+}
+
+async function resolveAppVolumeSettings(context) {
+  const settings = appVolumeSettings.get(context);
+  if (!settings?.name) return;
+  const apps = await audio.listApps();
+  const current = apps.find((app) => Number(app.pid) === settings.pid)
+    || apps.find((app) => String(app.name).toLocaleLowerCase() === settings.name.toLocaleLowerCase());
+  if (current && Number(current.pid) !== settings.pid) {
+    appVolumeSettings.set(context, { pid: Number(current.pid), name: current.name || settings.name });
+  }
 }
 
 async function updateOutputIcon(context) {
@@ -335,6 +347,14 @@ setInterval(() => {
   }
 }, 1500).unref();
 
+setInterval(() => {
+  for (const context of visiblePlayPauseContexts) {
+    audio.getPlaybackState()
+      .then((playback) => updatePlayPauseIcon(context, playback))
+      .catch((error) => console.error("Could not refresh media playback state:", error.message));
+  }
+}, 1000).unref();
+
 socket.connect(async (event) => {
   try {
     if (event.action === OUTPUT_SWITCH_ACTION_UUID && event.event === "didReceiveSettings") {
@@ -349,6 +369,7 @@ socket.connect(async (event) => {
     }
     if (event.action === APP_VOLUME_ACTION_UUID && event.event === "didReceiveSettings") {
       updateAppVolumeSettings(event.context, event.payload?.settings);
+      await resolveAppVolumeSettings(event.context);
       await refreshAppVolume(event.context);
       return;
     }
@@ -401,6 +422,7 @@ socket.connect(async (event) => {
     if (event.action === APP_VOLUME_ACTION_UUID) {
       if (event.event === "willAppear") {
         updateAppVolumeSettings(event.context, event.payload?.settings);
+        await resolveAppVolumeSettings(event.context);
         await refreshAppVolume(event.context);
       }
       const settings = appVolumeSettings.get(event.context);
@@ -422,7 +444,11 @@ socket.connect(async (event) => {
       return;
     }
     if (event.action === PLAY_PAUSE_ACTION_UUID) {
-      if (event.event === "willAppear") updatePlayPauseIcon(event.context, await audio.getPlaybackState());
+      if (event.event === "willAppear") {
+        visiblePlayPauseContexts.add(event.context);
+        updatePlayPauseIcon(event.context, await audio.getPlaybackState());
+      }
+      if (event.event === "willDisappear") visiblePlayPauseContexts.delete(event.context);
       if (event.event === "keyDown") updatePlayPauseIcon(event.context, await audio.togglePlayback());
       return;
     }
