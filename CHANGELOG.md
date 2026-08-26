@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.3] - 2026-08-26
+
+### Changed
+
+- Removed obsolete legacy system-action handling now replaced by the configurable Power Action.
+- Added regression coverage for external playback synchronization and application target recovery.
+
 ## [0.16.2] - 2026-08-26
 
 ### Changed

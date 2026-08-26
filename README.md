@@ -27,7 +27,7 @@ The plugin has been tested in practice only with an **AJAZZ AKP05E** running thr
 
 ## Install a release package
 
-1. Build or download `Windows-Essentials-0.16.2.streamDeckPlugin`.
+1. Build or download `Windows-Essentials-0.16.3.streamDeckPlugin`.
 2. In OpenDeck, open the plugin installer and select the package.
 3. Add actions from **Windows Essentials** to the AKP05E layout.
 4. Open an action's property inspector when it has configurable options.
@@ -68,7 +68,7 @@ The audio actions operate on the devices and sessions exposed by Windows. If Win
 
 ## Development status
 
-Version 0.16.2 is the visual refinement release with the latest icon set, playback-state polling and application-PID recovery. The next major work is testing on more hardware and preparing an OpenDeck marketplace submission. A separate Codex integration can be added later without changing the reliable system-volume path.
+Version 0.16.3 is the polished v0 release with the latest icon set, playback-state polling, application-PID recovery and cleaned runtime code. The next major work is testing on more hardware and preparing an OpenDeck marketplace submission. A separate Codex integration can be added later without changing the reliable system-volume path.
 
 ## License
 

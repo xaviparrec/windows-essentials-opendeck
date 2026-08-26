@@ -83,3 +83,11 @@ test("manifest exposes the configurable power action", () => {
   ]);
   assert.ok(fs.existsSync(path.join(folder, `${action.States[0].Image}.svg`)));
 });
+
+test("runtime keeps externally changed playback state and app settings recoverable", () => {
+  const source = fs.readFileSync(path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin", "bin", "plugin.cjs"), "utf8");
+  assert.match(source, /visiblePlayPauseContexts/);
+  assert.match(source, /getPlaybackState\(\)/);
+  assert.match(source, /toLocaleLowerCase\(\) === settings\.name\.toLocaleLowerCase\(\)/);
+  assert.doesNotMatch(source, /const SYSTEM_ACTIONS/);
+});

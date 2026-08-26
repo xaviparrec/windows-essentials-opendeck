@@ -16,12 +16,6 @@ const MEDIA_ACTIONS = new Map([
   ["net.parrec.deck.windows-essentials.media-previous", "previous"],
   ["net.parrec.deck.windows-essentials.media-next", "next"]
 ]);
-const SYSTEM_ACTIONS = new Map([
-  ["net.parrec.deck.windows-essentials.lock-pc", "lock-pc"],
-  ["net.parrec.deck.windows-essentials.sleep-pc", "sleep-pc"],
-  ["net.parrec.deck.windows-essentials.restart-pc", "restart-pc"],
-  ["net.parrec.deck.windows-essentials.shutdown-pc", "shutdown-pc"]
-]);
 const POWER_ACTION_UUID = "net.parrec.deck.windows-essentials.power-action";
 const shutdownConfirmations = new Map();
 const powerSettings = new Map();
@@ -455,24 +449,6 @@ socket.connect(async (event) => {
     const mediaKey = MEDIA_ACTIONS.get(event.action);
     if (mediaKey && event.event === "keyDown") await audio.sendMediaKey(mediaKey);
 
-    const systemAction = SYSTEM_ACTIONS.get(event.action);
-    if (systemAction && event.event === "keyDown") {
-      if (systemAction === "lock-pc") {
-        await audio.lockWorkstation();
-      } else if (systemAction === "shutdown-pc") {
-        const expires = shutdownConfirmations.get(event.context) || 0;
-        if (expires < Date.now()) {
-          shutdownConfirmations.set(event.context, Date.now() + 3000);
-          socket.send({ event: "setTitle", context: event.context, payload: { title: "Press again" } });
-          setTimeout(() => shutdownConfirmations.delete(event.context), 3000).unref();
-        } else {
-          shutdownConfirmations.delete(event.context);
-          await audio.power(systemAction);
-        }
-      } else {
-        await audio.power(systemAction);
-      }
-    }
   } catch (error) {
     console.error("Could not run Windows Essentials action:", error.message);
   }
