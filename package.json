@@ -1,6 +1,6 @@
 {
   "name": "windows-essentials-opendeck",
-  "version": "0.16.1",
+  "version": "0.16.2",
   "private": true,
   "description": "Windows volume, media, application and power controls for OpenDeck.",
   "scripts": {

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.2] - 2026-08-26
+
+### Changed
+
+- Refined the complete SVG icon set and plugin artwork.
+
 ## [0.16.1] - 2026-08-26
 
 ### Fixed
