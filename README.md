@@ -14,6 +14,12 @@ Windows controls for OpenDeck and Stream Deck-compatible hardware, built for the
 
 All property inspectors and user-facing manifest text are in English. The plugin keeps a small native Windows audio helper running while OpenDeck is active and rebuilds it automatically during packaging.
 
+## In OpenDeck
+
+![Windows Essentials running on an AJAZZ AKP05E](docs/opendeck-windows-essentials.png)
+
+This screenshot shows the plugin running on the tested AJAZZ AKP05E, including the encoder actions and the Spotify App Volume configuration.
+
 ## Requirements
 
 - Windows 10 or later (x64)
