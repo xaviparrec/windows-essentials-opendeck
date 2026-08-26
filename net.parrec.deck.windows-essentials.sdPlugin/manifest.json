@@ -6,7 +6,7 @@
   "Name": "Windows Essentials",
   "Icon": "imgs/plugin-icon",
   "URL": "https://github.com/xaviparrec/windows-essentials-opendeck",
-  "Version": "0.16.3",
+  "Version": "0.17.0",
   "Software": { "MinimumVersion": "6.5" },
   "Nodejs": { "Version": "20" },
   "OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
@@ -126,5 +126,18 @@
       { "Image": "imgs/shutdown-confirm-icon" }
     ],
     "UUID": "net.parrec.deck.windows-essentials.power-action"
+  }, {
+    "Icon": "imgs/display-on-icon",
+    "Name": "Display Control",
+    "Controllers": ["Keypad"],
+    "PropertyInspectorPath": "propertyInspector/display-control.html",
+    "DisableAutomaticStates": true,
+    "Tooltip": "Toggle a configured Windows display on or off.",
+    "States": [
+      { "Image": "imgs/display-on-icon" },
+      { "Image": "imgs/display-off-icon" },
+      { "Image": "imgs/display-unavailable-icon" }
+    ],
+    "UUID": "net.parrec.deck.windows-essentials.display-control"
   }]
 }

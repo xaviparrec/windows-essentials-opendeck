@@ -17,6 +17,7 @@ const MEDIA_ACTIONS = new Map([
   ["net.parrec.deck.windows-essentials.media-next", "next"]
 ]);
 const POWER_ACTION_UUID = "net.parrec.deck.windows-essentials.power-action";
+const DISPLAY_CONTROL_ACTION_UUID = "net.parrec.deck.windows-essentials.display-control";
 const shutdownConfirmations = new Map();
 const powerSettings = new Map();
 const POWER_STATES = {
@@ -127,6 +128,8 @@ class WindowsEndpointVolume {
   getAppVolume(pid) { return this.run("app-get", String(pid)); }
   adjustAppVolume(pid, ticks) { return this.run("app-adjust", String(pid), String(ticks)); }
   toggleAppMute(pid) { return this.run("app-toggle-mute", String(pid)); }
+  listDisplays() { return this.run("list-displays"); }
+  toggleDisplay(id) { return this.run("toggle-display", id); }
 
   lockWorkstation() {
     return new Promise((resolve, reject) => {
@@ -245,6 +248,8 @@ const action = new MasterVolumeAction(audio, displayFeedback);
 const outputSettings = new Map();
 const outputSelectorSettings = new Map();
 const appVolumeSettings = new Map();
+const displaySettings = new Map();
+const visibleDisplayContexts = new Set();
 const visibleOutputContexts = new Set();
 const visiblePlayPauseContexts = new Set();
 const microphoneAction = new MasterVolumeAction({
@@ -270,6 +275,35 @@ function updateOutputSelectorSettings(context, settings) {
 
 function updateAppVolumeSettings(context, settings) {
   appVolumeSettings.set(context, { pid: Number(settings?.pid) || 0, name: settings?.name || "" });
+}
+
+function updateDisplaySettings(context, settings) {
+  displaySettings.set(context, { id: settings?.id || "", label: settings?.label || "" });
+}
+
+async function updateDisplayIcon(context) {
+  const settings = displaySettings.get(context);
+  if (!settings?.id) {
+    socket.send({ event: "setState", context, payload: { state: 0 } });
+    socket.send({ event: "setTitle", context, payload: { title: "Configure" } });
+    return;
+  }
+  const displays = await audio.listDisplays();
+  const display = displays.find((item) => item.id === settings.id);
+  if (!display) {
+    socket.send({ event: "setState", context, payload: { state: 2 } });
+    socket.send({ event: "setTitle", context, payload: { title: settings.label || "Unavailable" } });
+    return;
+  }
+  socket.send({ event: "setState", context, payload: { state: display.active ? 0 : 1 } });
+  socket.send({ event: "setTitle", context, payload: { title: settings.label || `Display ${display.number}` } });
+}
+
+async function toggleDisplay(context) {
+  const settings = displaySettings.get(context);
+  if (!settings?.id) throw new Error("Configure a display in the action settings first.");
+  await audio.toggleDisplay(settings.id);
+  await updateDisplayIcon(context);
 }
 
 async function resolveAppVolumeSettings(context) {
@@ -349,6 +383,12 @@ setInterval(() => {
   }
 }, 1000).unref();
 
+setInterval(() => {
+  for (const context of visibleDisplayContexts) {
+    updateDisplayIcon(context).catch((error) => console.error("Could not refresh display state:", error.message));
+  }
+}, 1500).unref();
+
 socket.connect(async (event) => {
   try {
     if (event.action === OUTPUT_SWITCH_ACTION_UUID && event.event === "didReceiveSettings") {
@@ -372,12 +412,21 @@ socket.connect(async (event) => {
       updatePowerDisplay(event.context, powerSettings.get(event.context));
       return;
     }
+    if (event.action === DISPLAY_CONTROL_ACTION_UUID && event.event === "didReceiveSettings") {
+      updateDisplaySettings(event.context, event.payload?.settings);
+      await updateDisplayIcon(event.context);
+      return;
+    }
     if ([OUTPUT_SWITCH_ACTION_UUID, OUTPUT_SELECTOR_ACTION_UUID].includes(event.action) && event.event === "sendToPlugin" && event.payload?.event === "getOutputs") {
       socket.send({ event: "sendToPropertyInspector", context: event.context, payload: { event: "outputs", outputs: await audio.listOutputs() } });
       return;
     }
     if (event.action === APP_VOLUME_ACTION_UUID && event.event === "sendToPlugin" && event.payload?.event === "getApps") {
       socket.send({ event: "sendToPropertyInspector", context: event.context, payload: { event: "apps", apps: await audio.listApps() } });
+      return;
+    }
+    if (event.action === DISPLAY_CONTROL_ACTION_UUID && event.event === "sendToPlugin" && event.payload?.event === "getDisplays") {
+      socket.send({ event: "sendToPropertyInspector", context: event.context, payload: { event: "displays", displays: await audio.listDisplays() } });
       return;
     }
     if (event.action === MASTER_VOLUME_ACTION_UUID) {
@@ -435,6 +484,16 @@ socket.connect(async (event) => {
         updatePowerDisplay(event.context, powerSettings.get(event.context));
       }
       if (event.event === "keyDown") await runPowerAction(event.context);
+      return;
+    }
+    if (event.action === DISPLAY_CONTROL_ACTION_UUID) {
+      if (event.event === "willAppear") {
+        visibleDisplayContexts.add(event.context);
+        updateDisplaySettings(event.context, event.payload?.settings);
+        await updateDisplayIcon(event.context);
+      }
+      if (event.event === "willDisappear") visibleDisplayContexts.delete(event.context);
+      if (event.event === "keyDown") await toggleDisplay(event.context);
       return;
     }
     if (event.action === PLAY_PAUSE_ACTION_UUID) {

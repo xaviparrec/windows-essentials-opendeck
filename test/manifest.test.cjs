@@ -84,10 +84,25 @@ test("manifest exposes the configurable power action", () => {
   assert.ok(fs.existsSync(path.join(folder, `${action.States[0].Image}.svg`)));
 });
 
+test("manifest exposes configurable display control", () => {
+  const folder = path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin");
+  const manifest = JSON.parse(fs.readFileSync(path.join(folder, "manifest.json"), "utf8"));
+  const action = manifest.Actions.find((candidate) => candidate.UUID.endsWith(".display-control"));
+  assert.deepEqual(action.Controllers, ["Keypad"]);
+  assert.equal(action.PropertyInspectorPath, "propertyInspector/display-control.html");
+  assert.equal(action.DisableAutomaticStates, true);
+  assert.deepEqual(action.States.map((state) => state.Image), [
+    "imgs/display-on-icon", "imgs/display-off-icon", "imgs/display-unavailable-icon"
+  ]);
+  assert.ok(action.States.every((state) => fs.existsSync(path.join(folder, `${state.Image}.svg`))));
+});
+
 test("runtime keeps externally changed playback state and app settings recoverable", () => {
   const source = fs.readFileSync(path.join(__dirname, "..", "net.parrec.deck.windows-essentials.sdPlugin", "bin", "plugin.cjs"), "utf8");
   assert.match(source, /visiblePlayPauseContexts/);
   assert.match(source, /getPlaybackState\(\)/);
   assert.match(source, /toLocaleLowerCase\(\) === settings\.name\.toLocaleLowerCase\(\)/);
   assert.doesNotMatch(source, /const SYSTEM_ACTIONS/);
+  assert.match(source, /listDisplays()/);
+  assert.match(source, /toggleDisplay\(id\)/);
 });

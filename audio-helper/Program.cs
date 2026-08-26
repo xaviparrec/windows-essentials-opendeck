@@ -107,8 +107,12 @@ internal static class Program
                 return AdjustAppVolume(adjustProcessId, appTicks * 0.02f);
             case "app-toggle-mute" when int.TryParse(args.ElementAtOrDefault(1), out var muteProcessId):
                 return ToggleAppMute(muteProcessId);
+            case "list-displays":
+                return ListDisplays();
+            case "toggle-display" when !string.IsNullOrWhiteSpace(args.ElementAtOrDefault(1)):
+                return ToggleDisplay(args[1]);
             default:
-                throw new ArgumentException("Use: get | media <up|down|mute> [count] | adjust <signed ticks> | toggle-mute | mic-get | mic-adjust <signed ticks> | mic-toggle-mute | list-outputs | get-default-output | set-output <device id> | cycle-output <signed ticks> | list-apps | app-get <pid> | app-adjust <pid> <ticks> | app-toggle-mute <pid>");
+                throw new ArgumentException("Use: get | media <up|down|mute> [count] | adjust <signed ticks> | toggle-mute | mic-get | mic-adjust <signed ticks> | mic-toggle-mute | list-outputs | get-default-output | set-output <device id> | cycle-output <signed ticks> | list-apps | app-get <pid> | app-adjust <pid> <ticks> | app-toggle-mute <pid> | list-displays | toggle-display <display id>");
         }
         return endpoint.Read();
     }
@@ -172,6 +176,106 @@ internal static class Program
             keybd_event(key, 0, 0x0002, UIntPtr.Zero);
         }
     }
+
+    private static List<DisplayInfo> ListDisplays()
+    {
+        var displays = new List<DisplayInfo>();
+        for (uint index = 0; ; index++)
+        {
+            var adapter = new DisplayDevice();
+            adapter.cb = Marshal.SizeOf<DisplayDevice>();
+            if (!EnumDisplayDevices(null, index, ref adapter, 0)) break;
+            if ((adapter.StateFlags & DisplayDeviceMirroringDriver) != 0) continue;
+
+            var monitor = new DisplayDevice();
+            monitor.cb = Marshal.SizeOf<DisplayDevice>();
+            EnumDisplayDevices(adapter.DeviceName, 0, ref monitor, 0);
+            var monitorId = string.IsNullOrWhiteSpace(monitor.DeviceID) ? adapter.DeviceID : monitor.DeviceID;
+            var id = $"{monitorId}|{adapter.DeviceName}";
+            var name = string.IsNullOrWhiteSpace(monitor.DeviceString) ? adapter.DeviceString : monitor.DeviceString;
+            var currentMode = new DevMode { dmSize = (short)Marshal.SizeOf<DevMode>() };
+            var active = EnumDisplaySettings(adapter.DeviceName, EnumCurrentSettings, ref currentMode);
+            displays.Add(new DisplayInfo(id, displays.Count + 1, name, active,
+                (adapter.StateFlags & DisplayDevicePrimaryDevice) != 0, adapter.DeviceName));
+        }
+        return displays;
+    }
+
+    private static DisplayInfo ToggleDisplay(string id)
+    {
+        var display = ListDisplays().FirstOrDefault(item => string.Equals(item.id, id, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(item.deviceName, id, StringComparison.OrdinalIgnoreCase));
+        if (display is null) throw new ArgumentException($"Display '{id}' was not found.");
+        if (display.primary) throw new InvalidOperationException("The primary display cannot be disabled.");
+
+        int result;
+        if (display.active)
+        {
+            var mode = new DevMode { dmSize = (short)Marshal.SizeOf<DevMode>() };
+            result = ChangeDisplaySettingsEx(display.deviceName, ref mode, IntPtr.Zero,
+                ChangeDisplaySettingsDisable, IntPtr.Zero);
+        }
+        else
+        {
+            result = ChangeDisplaySettingsEx(display.deviceName, IntPtr.Zero, IntPtr.Zero,
+                ChangeDisplaySettingsUpdateRegistry, IntPtr.Zero);
+        }
+        if (result != DisplayChangeSuccessful && result != DisplayChangeRestart)
+            throw new InvalidOperationException($"Windows could not change display state (code {result}).");
+
+        Thread.Sleep(100);
+        return ListDisplays().FirstOrDefault(item => string.Equals(item.id, id, StringComparison.OrdinalIgnoreCase))
+            ?? display with { active = !display.active };
+    }
+
+    private const uint DisplayDeviceAttachedToDesktop = 0x00000002;
+    private const uint DisplayDeviceMirroringDriver = 0x00000008;
+    private const uint EnumCurrentSettings = unchecked((uint)-1);
+    private const uint DisplayDevicePrimaryDevice = 0x00000004;
+    private const uint ChangeDisplaySettingsUpdateRegistry = 0x00000001;
+    private const uint ChangeDisplaySettingsDisable = 0x02000000;
+    private const int DisplayChangeSuccessful = 0;
+    private const int DisplayChangeRestart = 1;
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool EnumDisplayDevices(string? device, uint deviceIndex, ref DisplayDevice displayDevice, uint flags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int ChangeDisplaySettingsEx(string? deviceName, ref DevMode devMode, IntPtr hwnd, uint flags, IntPtr lParam);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int ChangeDisplaySettingsEx(string? deviceName, IntPtr devMode, IntPtr hwnd, uint flags, IntPtr lParam);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool EnumDisplaySettings(string deviceName, uint modeNum, ref DevMode devMode);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct DisplayDevice
+    {
+        public int cb;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string DeviceName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceString;
+        public uint StateFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceID;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceKey;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct DevMode
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmDeviceName;
+        public short dmSpecVersion, dmDriverVersion, dmSize, dmDriverExtra;
+        public int dmFields;
+        public int dmPositionX, dmPositionY, dmDisplayOrientation, dmDisplayFixedOutput;
+        public short dmColor, dmDuplex, dmYResolution, dmTTOption, dmCollate;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmFormName;
+        public short dmLogPixels;
+        public int dmBitsPerPel, dmPelsWidth, dmPelsHeight, dmDisplayFlags, dmDisplayFrequency;
+        public int dmICMMethod, dmICMIntent, dmMediaType, dmDitherType, dmReserved1, dmReserved2;
+        public int dmPanningWidth, dmPanningHeight;
+    }
+
+    private sealed record DisplayInfo(string id, int number, string name, bool active, bool primary, string deviceName);
 
     [DllImport("user32.dll")]
     private static extern void keybd_event(byte virtualKey, byte scanCode, uint flags, UIntPtr extraInfo);

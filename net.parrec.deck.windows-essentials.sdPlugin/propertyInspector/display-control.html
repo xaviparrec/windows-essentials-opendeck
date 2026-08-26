@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { background: #202020; color: #ddd; font: 13px sans-serif; margin: 16px; }
+    label { display: block; margin: 8px 0 6px; color: #aaa; }
+    select, input { box-sizing: border-box; width: 100%; background: #303030; border: 1px solid #555; border-radius: 4px; color: #fff; padding: 7px; }
+    p { color: #aaa; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <label for="display">Display</label>
+  <select id="display"><option value="">Select a display…</option></select>
+  <label for="label">Custom label (optional)</label>
+  <input id="label" maxlength="24" placeholder="e.g. Projector">
+  <p>Press the key to enable or disable the selected display. The primary display cannot be disabled.</p>
+  <script>
+    let socket;
+    let context;
+    let settings = {};
+    let displays = [];
+    const displaySelect = document.getElementById("display");
+    const labelInput = document.getElementById("label");
+
+    function populate(nextDisplays) {
+      displays = nextDisplays;
+      displaySelect.innerHTML = '<option value="">Select a display…</option>';
+      for (const display of displays) {
+        const option = document.createElement("option");
+        option.value = display.id;
+        option.textContent = `Display ${display.number}: ${display.name}${display.primary ? " (Primary)" : ""}`;
+        option.selected = display.id === settings.id;
+        displaySelect.appendChild(option);
+      }
+    }
+
+    function save() {
+      settings = { id: displaySelect.value, label: labelInput.value.trim() };
+      socket.send(JSON.stringify({ event: "setSettings", context, payload: settings }));
+    }
+
+    function connectElgatoStreamDeckSocket(inPort, inPropertyInspectorUUID, inRegisterEvent, inInfo, inActionInfo) {
+      const actionInfo = JSON.parse(inActionInfo);
+      context = actionInfo.context;
+      settings = actionInfo.payload.settings || {};
+      labelInput.value = settings.label || "";
+      socket = new WebSocket("ws://localhost:" + inPort);
+      socket.onopen = () => {
+        socket.send(JSON.stringify({ event: inRegisterEvent, uuid: inPropertyInspectorUUID }));
+        socket.send(JSON.stringify({ event: "sendToPlugin", context, payload: { event: "getDisplays" } }));
+      };
+      socket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if (data.event === "sendToPropertyInspector" && data.payload?.event === "displays") populate(data.payload.displays);
+      };
+    }
+
+    displaySelect.addEventListener("change", save);
+    labelInput.addEventListener("change", save);
+  </script>
+</body>
+</html>
